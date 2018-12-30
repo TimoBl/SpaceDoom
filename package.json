@@ -1,0 +1,33 @@
+{
+  "name": "Asteroid_Game_Prototype",
+  "version": "0.0.1",
+  "description": "An online asteroid game prototype",
+  "engines": {
+    "node": "10.x"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "ejs": "^2.5.6",
+    "express": "^4.15.2",
+    "jquery": "^3.3.1",
+    "socket.io": "^2.2.0"
+  },
+  "devDependencies": {
+    "request": "^2.81.0",
+    "tape": "^4.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/BlackGhost7530/repository.git"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express"
+  ],
+  "license": "MIT"
+}
