@@ -495,17 +495,16 @@ function update_map(players, bullets){
     }
 
     for (var i = 0; i < asteroids.length; i++){
-      var d = Math.pow(players[j].x - asteroids[i].x, 2) + Math.pow(players[j].y - asteroids[i].y, 2)
-      
-      if (d <= Math.pow((players[j].r + asteroids[i].r), 2)){
+      var d = Math.sqrt(Math.pow(players[j].x - asteroids[i].x, 2) + Math.pow(players[j].y - asteroids[i].y, 2))
+      if (d <= (players[j].r + asteroids[i].r)){
         players[j].vx = -9 * players[j].vx / 10
         players[j].vy = -9 * players[j].vy / 10
-        players[j].health -= parseInt((Math.pow(players[j].vx, 2) + Math.pow(players[j].vy, 2)))
-      } else if (d < Math.pow((players[j].r + asteroids[i].ir), 2)){
+        players[j].health -= parseInt(Math.sqrt(Math.pow(players[j].vx, 2) + Math.pow(players[j].vy, 2)))
+      } else if (d < (players[j].r + asteroids[i].ir)){
         let dx = asteroids[i].x - players[j].x 
         let dy = asteroids[i].y - players[j].y
-        players[j].vx += (d*d / dx)
-        players[j].vy += (d*d / dy)
+        players[j].vx += (dx / d) * 0.05
+        players[j].vy += (dy / d) * 0.05
       }
     }
   }
