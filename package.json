@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "description": "An online asteroid game prototype",
   "engines": {
-    "node": "10.x"
+    "node": "10.x",
+    "npm": "1.2.25"
   },
   "main": "index.js",
   "scripts": {

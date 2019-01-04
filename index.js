@@ -18,7 +18,7 @@ io.on('connection', function(socket){
   socket.emit("change_html", text)
 
   socket.on('start_game', function(name) {
-    if (name.length > 0 && name.length <= 10){
+    if (name.length > 0 && name.length <= 10 && players.length <= 6){
       var nx = 100 + Math.random() * (bound.x1 - 100)
       var ny = 100 + Math.random() * (bound.y1 - 100)
       var player = {
@@ -79,6 +79,7 @@ var bound = {x0: 0, y0: 0, x1: 2000, y1: 1000}
 var bounciness = 0.75
 var players = []
 var bullets = []
+var asteroids = []
 var shoot_freq = 30
 var shoot_force = 30
 var player_speed = 0.1
@@ -91,6 +92,7 @@ setInterval(() => {
     io.sockets.emit('update', players, bullets);
   }
 }, 1000 / 60);
+
 
 function shoot(player){
   player.shoot_countdown = shoot_freq
@@ -134,7 +136,7 @@ function get_menu(){
 function get_canvas(){
   var canvas = `
   <canvas id="myCanvas" style="position: absolute;"></canvas>
-  <div id="player_container" style="width: 150px; right: 0px; top: 0px; position: absolute; background-color: rgba(102, 102, 102, 0.5)">
+  <div id="player_container" style="width: 160px; right: 0px; top: 0px; position: absolute; background-color: rgba(102, 102, 102, 0.5)">
     <div id="player_list" style="color: white; margin: 5px"></div>
   </div>
   `
@@ -274,20 +276,31 @@ function get_game_logic(){
       c.height = window.innerHeight
       ctx = c.getContext('2d')
       bound = {x0: ${bound.x0}, y0: ${bound.y0}, x1: ${bound.x1}, y1: ${bound.y1}}
+      var background_image = new Image()
+      background_image.src = "https://www.nasa.gov/sites/default/files/styles/full_width_feature/public/thumbnails/image/potw1838a.jpg"
 
       document.addEventListener('keydown', function(event) {
-        if (event.keyCode == "68"){socket.emit('change_rotation_input', 1)} //d
         if (event.keyCode == "65"){socket.emit('change_rotation_input', -1)} //a
+        if (event.keyCode == "37"){socket.emit('change_rotation_input', -1)} //arrow left
+
+        if (event.keyCode == "68"){socket.emit('change_rotation_input', 1)} //d
+        if (event.keyCode == "39"){socket.emit('change_rotation_input', 1)} //arrow right
+        
         if (event.keyCode == "87"){socket.emit('change_y_input', 1)} //w
-        if (event.keyCode == "83"){socket.emit('change_y_input', -1)} //s
+        if (event.keyCode == "38"){socket.emit('change_y_input', 1)} //arrow up
+
         if (event.keyCode == "32"){socket.emit('shoot')} //shoot
       }, false)
 
       document.addEventListener('keyup', function(event) {
-        if (event.keyCode == "68"){socket.emit('change_rotation_input', 0)} //d
         if (event.keyCode == "65"){socket.emit('change_rotation_input', 0)} //a
+        if (event.keyCode == "37"){socket.emit('change_rotation_input', 0)} //arrow left
+
+        if (event.keyCode == "68"){socket.emit('change_rotation_input', 0)} //d
+        if (event.keyCode == "39"){socket.emit('change_rotation_input', 0)} //arrow right
+        
         if (event.keyCode == "87"){socket.emit('change_y_input', 0)} //w
-        if (event.keyCode == "83"){socket.emit('change_y_input', 0)} //s
+        if (event.keyCode == "38"){socket.emit('change_y_input', 0)} //arrow up
       }, false)
 
       socket.on('update', function(players, bullets) {
@@ -304,6 +317,10 @@ function get_game_logic(){
 
         border = 100
 
+        //draw_background(dx, dy, background_image)
+        draw_borders(dx, dy)
+        draw_bullets(dx, dy, bullets)
+
         for (var i = 0; i < players.length; i++){
           var x = dx + players[i].x
           var y = dy + players[i].y
@@ -315,11 +332,14 @@ function get_game_logic(){
             }
           }
         }
-        draw_borders(dx, dy)
-        draw_bullets(dx, dy, bullets)
+
         draw_mini_map(players)
         display_player_rank(players)
       })
+
+      function draw_background(dx, dy, img){
+        ctx.drawImage(img, dx, dy, bound.x1, bound.y1)
+      }
 
       function draw_bullets(dx, dy, bullets){
         ctx.fillStyle = "black"
