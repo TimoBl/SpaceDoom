@@ -165,6 +165,137 @@ function get_canvas(){
   return canvas
 }
 
+function move(players, bullets){
+  for (var i = 0; i < players.length; i++){
+    players[i].rot += (players[i].input_r / 10)
+    players[i].vx += players[i].input_t * Math.cos(players[i].rot) * player_speed
+    players[i].vy += players[i].input_t * Math.sin(players[i].rot) * player_speed
+    players[i].x += players[i].vx
+    players[i].y += players[i].vy
+  }
+
+  for (var i = bullets.length - 1; i >= 0; i--){
+    if (bullets[i].state == "shot"){
+      bullets[i].x += bullets[i].vx
+      bullets[i].y += bullets[i].vy
+      if (bullets[i].x < bound.x0 || bullets[i].x > bound.x1 || bullets[i].y < bound.y0 || bullets[i].y > bound.y1){
+        bullets.splice(i, 1)
+      }
+    } else if (bullets[i].state == "exploded") {
+      bullets[i].r += 0.5
+      if (bullets[i].r > 10){
+        bullets.splice(i, 1)
+      }
+    }
+  }
+  return [players, bullets]
+}
+
+function update_map(players, bullets){
+  var collided = []
+
+  for (var j = 0; j < players.length; j++){
+    for (var i = 0; i < players.length; i++){
+      if (j !== i && !(collided.includes(i) && collided.includes(j))){
+        var p1 = players[j]
+        var p2 = players[i]
+
+        var dx = p1.x - p2.x
+        var dy = p1.y - p2.y
+        var d = Math.sqrt(dx*dx + dy*dy)
+        
+        if (d <= (p1.r + p2.r)){
+
+          var cx = ((p1.x * p2.r) + (p2.x * p1.r)) / (p1.r + p2.r);
+          var cy = ((p1.y * p2.r) + (p2.y * p1.r)) / (p1.r + p2.r);
+
+          var nvx1 = p2.vx * bounciness
+          var nvy1 = p2.vy * bounciness
+          var nvx2 = p1.vx * bounciness
+          var nvy2 = p1.vy * bounciness
+          var damage = parseInt((Math.pow(p1.vx - p2.vx, 2) + Math.pow(p1.vy - p2.vy, 2)))
+
+          players[j].vx = nvx1
+          players[j].vy = nvy1
+
+          players[j].health -= damage
+          if (players[j].health <= 0){
+            players[j].health = 100
+            players[j].killed += 1
+            players[i].kills += 1
+          }
+
+          players[i].vx = nvx2
+          players[i].vy = nvy2
+          players[i].health -= damage
+          if (players[i].health <= 0){
+            players[i].health = 100
+            players[i].killed += 1
+            players[j].kills += 1
+          }
+
+          collided.push(j)
+          collided.push(i)
+        }
+      }
+    }
+
+    if (players[j].x - players[j].r < bound.x0) {
+      players[j].vx = -players[j].vx * bounciness
+      players[j].x += 5
+    } else if (players[j].x + players[j].r > bound.x1) {
+      players[j].vx = -players[j].vx * bounciness
+      players[j].x -= 5
+    }
+
+    if (players[j].y - players[j].r < bound.y0) {
+      players[j].vy = -players[j].vy *bounciness
+      players[j].y += 5
+    } else if (players[j].y + players[j].r > bound.y1) {
+      players[j].vy = -players[j].vy * bounciness
+      players[j].y -= 5
+    }
+
+    if (players[j].shoot_countdown > 0){
+      players[j].shoot_countdown -= 1
+    }
+
+    for (var i = bullets.length - 1; i >= 0; i--) {
+      if (bullets[i].state == "shot"){
+        var d = Math.pow(players[j].x - bullets[i].x, 2) + Math.pow(players[j].y - bullets[i].y, 2)
+        if (d < (players[j].r * players[j].r) && bullets[i].id !== players[j].id){
+          players[j].health -= 10
+          if (players[j].health <= 0){
+            players[j].health = 100
+            var player = players.filter(obj => {
+              return obj.id === bullets[i].id
+            })
+            players[j].killed += 1
+            player[0].kills += 1
+          }
+          bullets[i].state = "exploded"
+        }
+      }
+    }
+
+    for (var i = 0; i < asteroids.length; i++){
+      var d = Math.pow(players[j].x - asteroids[i].x, 2) + Math.pow(players[j].y - asteroids[i].y, 2)
+      
+      if (d <= Math.pow((players[j].r + asteroids[i].r), 2)){
+        players[j].vx = -9 * players[j].vx / 10
+        players[j].vy = -9 * players[j].vy / 10
+        players[j].health -= parseInt((Math.pow(players[j].vx, 2) + Math.pow(players[j].vy, 2)))
+      } else if (d < Math.pow((players[j].r + asteroids[i].ir), 2)){
+        let dx = asteroids[i].x - players[j].x 
+        let dy = asteroids[i].y - players[j].y
+        players[j].vx += (d*d / dx)
+        players[j].vy += (d*d / dy)
+      }
+    }
+  }
+  return [players, bullets]
+}
+
 function get_random_color(){
   var r = parseInt(Math.random() * 128 + 128).toString()
   var g = parseInt(Math.random() * 128 + 128).toString()
@@ -370,144 +501,4 @@ function get_game_logic(){
     </script>`
 
   return logic
-}
-
-function move(players, bullets){
-  players = move_players(players)
-  bullets = move_bullets(bullets)
-  return [players, bullets]
-}
-
-function move_players(players){
-  for (var i = 0; i < players.length; i++){
-    players[i].rot += (players[i].input_r / 10)
-    players[i].vx += players[i].input_t * Math.cos(players[i].rot) * player_speed
-    players[i].vy += players[i].input_t * Math.sin(players[i].rot) * player_speed
-    players[i].x += players[i].vx
-    players[i].y += players[i].vy
-  }
-  return players
-}
-
-function move_bullets(bullets){
-  for (var i = bullets.length - 1; i >= 0; i--){
-    if (bullets[i].state == "shot"){
-      bullets[i].x += bullets[i].vx
-      bullets[i].y += bullets[i].vy
-      if (bullets[i].x < bound.x0 || bullets[i].x > bound.x1 || bullets[i].y < bound.y0 || bullets[i].y > bound.y1){
-        bullets.splice(i, 1)
-      }
-    } else if (bullets[i].state == "exploded") {
-      bullets[i].r += 0.5
-      if (bullets[i].r > 10){
-        bullets.splice(i, 1)
-      }
-    }
-  }
-  return bullets
-}
-
-function update_map(players, bullets){
-  var collided = []
-
-  for (var j = 0; j < players.length; j++){
-    for (var i = 0; i < players.length; i++){
-      if (j !== i && !(collided.includes(i) && collided.includes(j))){
-        var p1 = players[j]
-        var p2 = players[i]
-
-        var dx = p1.x - p2.x
-        var dy = p1.y - p2.y
-        var d = Math.sqrt(dx*dx + dy*dy)
-        
-        if (d <= (p1.r + p2.r)){
-
-          var cx = ((p1.x * p2.r) + (p2.x * p1.r)) / (p1.r + p2.r);
-          var cy = ((p1.y * p2.r) + (p2.y * p1.r)) / (p1.r + p2.r);
-
-          var nvx1 = p2.vx * bounciness
-          var nvy1 = p2.vy * bounciness
-          var nvx2 = p1.vx * bounciness
-          var nvy2 = p1.vy * bounciness
-          var damage = parseInt((Math.pow(p1.vx - p2.vx, 2) + Math.pow(p1.vy - p2.vy, 2)))
-
-          players[j].vx = nvx1
-          players[j].vy = nvy1
-
-          players[j].health -= damage
-          if (players[j].health <= 0){
-            players[j].health = 100
-            players[j].killed += 1
-            players[i].kills += 1
-          }
-
-          players[i].vx = nvx2
-          players[i].vy = nvy2
-          players[i].health -= damage
-          if (players[i].health <= 0){
-            players[i].health = 100
-            players[i].killed += 1
-            players[j].kills += 1
-          }
-
-          collided.push(j)
-          collided.push(i)
-        }
-      }
-    }
-
-    if (players[j].x - players[j].r < bound.x0) {
-      players[j].vx = -players[j].vx * bounciness
-      players[j].x += 5
-    } else if (players[j].x + players[j].r > bound.x1) {
-      players[j].vx = -players[j].vx * bounciness
-      players[j].x -= 5
-    }
-
-    if (players[j].y - players[j].r < bound.y0) {
-      players[j].vy = -players[j].vy *bounciness
-      players[j].y += 5
-    } else if (players[j].y + players[j].r > bound.y1) {
-      players[j].vy = -players[j].vy * bounciness
-      players[j].y -= 5
-    }
-
-    if (players[j].shoot_countdown > 0){
-      players[j].shoot_countdown -= 1
-    }
-
-    for (var i = bullets.length - 1; i >= 0; i--) {
-      if (bullets[i].state == "shot"){
-        var d = Math.pow(players[j].x - bullets[i].x, 2) + Math.pow(players[j].y - bullets[i].y, 2)
-        if (d < (players[j].r * players[j].r) && bullets[i].id !== players[j].id){
-          players[j].health -= 10
-          if (players[j].health <= 0){
-            players[j].health = 100
-            var player = players.filter(obj => {
-              return obj.id === bullets[i].id
-            })
-            players[j].killed += 1
-            player[0].kills += 1
-          }
-          bullets[i].state = "exploded"
-        }
-      }
-    }
-
-    for (var i = 0; i < asteroids.length; i++){
-      var d = Math.pow(players[j].x - asteroids[i].x, 2) + Math.pow(players[j].y - asteroids[i].y, 2)
-      
-      if (d <= Math.pow((players[j].r + asteroids[i].r), 2)){
-        players[j].vx = -9 * players[j].vx / 10
-        players[j].vy = -9 * players[j].vy / 10
-        players[j].health -= parseInt((Math.pow(players[j].vx, 2) + Math.pow(players[j].vy, 2)))
-      } else if (d < Math.pow((players[j].r + asteroids[i].ir), 2)){
-        let dx = asteroids[i].x - players[j].x 
-        let dy = asteroids[i].y - players[j].y
-        players[j].vx += (d*d / dx)
-        players[j].vy += (d*d / dy)
-      }
-    }
-  }
-  return [players, bullets]
 }
