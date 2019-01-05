@@ -162,9 +162,7 @@ function get_menu(){
 
 function get_canvas(){
   var canvas = `
-  <canvas id="backCanvas" style="position: absolute; z-index: 0;"></canvas>
-  <canvas id="myCanvas" style="position: absolute; z-index: 1;"></canvas>
-  <canvas id="shaderCanvas" style="position: absolute; z-index: 2;"></canvas>
+  <canvas id="myCanvas" style="position: absolute;"></canvas>
   <div id="player_container" style="width: 160px; right: 0px; top: 0px; position: absolute; background-color: rgba(102, 102, 102, 0.5)">
     <div id="player_list" style="color: white; margin: 5px"></div>
   </div>
@@ -201,46 +199,24 @@ function move(players, bullets){
 function update_map(players, bullets, asteroids){
   var collided = []
 
-  var a = get_map_collision(bullets, asteroids)
-  bullets = a[0]
-  asteroids = a[1]
-
   for (var j = 0; j < players.length; j++){
-    var a = get_collision_to(j, players, collided)
+    a = get_collision_to(j, players, collided)
     players = a[0]
     collided = a[1]
     players[j] = get_border_collision(players[j])
 
-    var a = get_bullet_collision(j, players, bullets)
-    players = a[0]
-    bullets = a[1]
-
-    var a = get_asteroid_collision(players[j], asteroids)
-    players[j] = a[0]
-    asteroids = a[1]
-
     if (players[j].shoot_countdown > 0){
       players[j].shoot_countdown -= 1
     }
-
-    if (players[j].health <= 0){
-      players[j].health = 100
-      players[j].killed += 1
-    }
+    
+    a = get_bullet_collision(players, bullets)
+    players = a[0]
+    bullets = a[1]
+    a = get_asteroid_collision(players[j], asteroids)
+    players[j] = a[0]
+    asteroids = a[1]
   }
   return [players, bullets, asteroids]
-}
-
-function get_map_collision(bullets, asteroids){
-  for (var j = 0; j < asteroids.length; j++){
-    for (var i = bullets.length - 1; i >= 0; i--) {
-      var d = parseInt(Math.sqrt(Math.pow(bullets[i].x - asteroids[j].x, 2) + Math.pow(bullets[i].y - asteroids[j].y, 2)))
-      if (d < asteroids[j].r + bullets[i].r){
-        bullets.splice(i, 1)
-      }
-    }
-  }
-  return [bullets, asteroids]
 }
 
 function get_collision_to(j, players, collided){
@@ -312,7 +288,7 @@ function get_border_collision(p){
   return p
 }
 
-function get_bullet_collision(j, players, bullets){
+function get_bullet_collision(players, bullets){
   for (var i = bullets.length - 1; i >= 0; i--) {
     if (bullets[i].state == "shot"){
       var d = Math.pow(players[j].x - bullets[i].x, 2) + Math.pow(players[j].y - bullets[i].y, 2)
@@ -335,7 +311,7 @@ function get_bullet_collision(j, players, bullets){
 
 function get_asteroid_collision(p, asteroids){
   for (var i = 0; i < asteroids.length; i++){
-    var d = parseInt(Math.sqrt(Math.pow(p.x - asteroids[i].x, 2) + Math.pow(p.y - asteroids[i].y, 2)))
+    var d = Math.sqrt(Math.pow(p.x - asteroids[i].x, 2) + Math.pow(p.y - asteroids[i].y, 2))
     
     if (d <= (p.r + asteroids[i].r)){
       p.vx = -9 * p.vx / 10
@@ -362,21 +338,10 @@ function get_random_color(){
 function get_game_logic(){
   var logic = `
     <script type="text/javascript">
-      bc = $("#backCanvas")[0]
-      bc.width = window.innerWidth
-      bc.height = window.innerHeight
-      bctx = bc.getContext('2d')
-
       c = $("#myCanvas")[0]
       c.width = window.innerWidth
       c.height = window.innerHeight
       ctx = c.getContext('2d')
-
-      sc = $("#shaderCanvas")[0]
-      sc.width = window.innerWidth
-      sc.height = window.innerHeight
-      sctx = sc.getContext('2d')
-
       bound = {x0: ${bound.x0}, y0: ${bound.y0}, x1: ${bound.x1}, y1: ${bound.y1}}
       var background_image = new Image()
       background_image.src = "https://www.nasa.gov/sites/default/files/styles/full_width_feature/public/thumbnails/image/potw1838a.jpg"
@@ -407,9 +372,7 @@ function get_game_logic(){
       }, false)
 
       socket.on('update', function(players, bullets) {
-        bctx.clearRect(0, 0, c.width, c.height)
         ctx.clearRect(0, 0, c.width, c.height)
-        sctx.clearRect(0, 0, c.width, c.height)
 
         var player = players.filter(obj => {
           return obj.id === socket.id
@@ -422,7 +385,7 @@ function get_game_logic(){
 
         border = 100
 
-        draw_background(dx, dy, background_image)
+        //draw_background(dx, dy, background_image)
         draw_borders(dx, dy)
         draw_bullets(dx, dy, bullets)
         draw_asteroids(dx, dy, asteroids)
@@ -436,7 +399,6 @@ function get_game_logic(){
             if (players[i].input_t !== 0){
               draw_thrust(x, y, players[i].r, players[i].rot)
             }
-            draw_light(x, y, players[i].r, players[i].rot)
           }
         }
 
@@ -445,12 +407,11 @@ function get_game_logic(){
       })
 
       function draw_background(dx, dy, img){
-        bctx.fillRect(0, 0, bc.width, bc.height);
-        bctx.drawImage(img, dx, dy, bound.x1, bound.y1)
+        ctx.drawImage(img, dx, dy, bound.x1, bound.y1)
       }
 
       function draw_bullets(dx, dy, bullets){
-        ctx.fillStyle = "green"
+        ctx.fillStyle = "black"
         for (var i = 0; i < bullets.length; i++){
           var x = dx + bullets[i].x
           var y = dy + bullets[i].y
@@ -484,8 +445,6 @@ function get_game_logic(){
       }
 
       function draw_asteroids(dx, dy, asteroids){
-        ctx.fillStyle = "#4f2600"
-
         for (var i = 0; i < asteroids.length; i++){
           ctx.beginPath();
           ctx.arc(dx + asteroids[i].x, dy + asteroids[i].y, asteroids[i].r, 0, 2 * Math.PI);
@@ -546,38 +505,15 @@ function get_game_logic(){
       }
 
       function draw_thrust(x, y, r, rot){
-        var grad = sctx.createRadialGradient(x,y,0,x,y,1.5*r)
-        
-        grad.addColorStop(0.002, 'rgba(255, 0, 0, 1.000)');
-        grad.addColorStop(0.645, 'rgba(255, 127, 0, 0.6)');
-        grad.addColorStop(1.000, 'rgba(255, 246, 0, 0.2)');
-
-        sctx.fillStyle = grad
-        sctx.beginPath() 
-        var path = [[0, 1.5*r], [-r/4, r/2], [r/4, r/2]]
+        ctx.fillStyle = "red"
+        ctx.beginPath() 
+        var path = [[0, r], [-r/4, r/2], [r/4, r/2]]
         for (var i = 0; i < path.length; i++){
           var x1 = x + parseInt(Math.cos(rot + Math.PI / 2) * path[i][0] - Math.sin(rot + Math.PI / 2) * path[i][1])
           var y1 = y + parseInt(Math.sin(rot + Math.PI / 2) * path[i][0] + Math.cos(rot + Math.PI / 2) * path[i][1])
-          sctx.lineTo(x1, y1)
+          ctx.lineTo(x1, y1)
         }
-        sctx.fill()
-      }
-
-      function draw_light(x, y, r, rot){
-        var grad = sctx.createRadialGradient(x,y,0,x,y,r*6)
-        grad.addColorStop(0.0, 'rgba(255, 255, 0, 0.75)');
-        grad.addColorStop(1.0, 'rgba(255, 255, 0, 0)');
-
-        sctx.fillStyle = grad
-        sctx.globalAlpha = 1.0
-        sctx.beginPath()
-        var path = [[0, - 3 * r / 4], [-2 * r, -6 * r], [2 * r, -6 * r]]
-        for (var i = 0; i < path.length; i++){
-          var x1 = x + parseInt(Math.cos(rot + Math.PI / 2) * path[i][0] - Math.sin(rot + Math.PI / 2) * path[i][1])
-          var y1 = y + parseInt(Math.sin(rot + Math.PI / 2) * path[i][0] + Math.cos(rot + Math.PI / 2) * path[i][1])
-          sctx.lineTo(x1, y1)
-        }
-        sctx.fill()
+        ctx.fill()
       }
 
       function display_player_rank(players){
