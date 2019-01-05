@@ -156,6 +156,36 @@ function get_menu(){
     <i>C'est un premier essai pour mon tm</i><br><br>
     <input id="name_input" placeholder="Name: ">
     <button onclick="socket.emit(\'start_game\', document.getElementById('name_input').value)">Start Game</button>
+    <br>
+    <br>
+    <br>
+    <b>Les commandes</b>
+    <br>
+    <br>
+    [w] ou [upArrow] = avancer
+    <br>
+    <br>
+    [a] ou [leftArrow] = tourner à gaucher
+    <br>
+    <br>
+    [d] ou [rightArrow] = tourner à droite
+    <br>
+    <br>
+    [spacebar] = tirer
+    <br>
+    <br>
+    <br>
+    <b>Les instructions</b>
+    <br>
+    <br>
+    Détruire l'autre...
+    <br>
+    <br>
+    <br>
+    <i><b>Bon jeu!</b></i>
+    <br>
+    <br>
+    P.S Les suggestions/critiques sont le bienvenu
     </center> `
   return menu
 }
@@ -260,14 +290,24 @@ function get_collision_to(j, players, collided){
 
         var nvx1 = p2.vx * bounciness
         var nvy1 = p2.vy * bounciness
+
         var nvx2 = p1.vx * bounciness
         var nvy2 = p1.vy * bounciness
         
         var damage = parseInt((Math.pow(p1.vx - p2.vx, 2) + Math.pow(p1.vy - p2.vy, 2)))
 
+        var nx1 = cx + (p1.r + p2.r) * dx / d
+        var ny1 = cy + (p1.r + p2.r) * dy / d
+        var nx2 = cx - (p1.r + p2.r) * dx / d
+        var ny2 = cy - (p1.r + p2.r) * dy / d
+
+        p1.x = nx1
+        p1.y = ny1
         p1.vx = nvx1
         p1.vy = nvy1
 
+        p2.x = nx2
+        p2.y = ny2
         p2.vx = nvx2
         p2.vy = nvy2
 
@@ -336,8 +376,13 @@ function get_bullet_collision(j, players, bullets){
 function get_asteroid_collision(p, asteroids){
   for (var i = 0; i < asteroids.length; i++){
     var d = parseInt(Math.sqrt(Math.pow(p.x - asteroids[i].x, 2) + Math.pow(p.y - asteroids[i].y, 2)))
+    var dx = p.x - asteroids[i].x
+    var dy = p.y - asteroids[i].y 
     
     if (d <= (p.r + asteroids[i].r)){
+      p.x = ((asteroids[i].r + p.r) * dx / d) + asteroids[i].x
+      p.y = ((asteroids[i].r + p.r) * dy / d) + asteroids[i].y
+
       p.vx = -9 * p.vx / 10
       p.vy = -9 * p.vy / 10
       p.health -= parseInt((Math.pow(p.vx, 2) + Math.pow(p.vy, 2)))
