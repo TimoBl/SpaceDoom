@@ -190,7 +190,6 @@ function get_menu(){
     <br>
     <br>
     P.S Les suggestions/critiques sont le bienvenu
-    <img src="static/octocat.png">
     </center> `
   return menu
 }
