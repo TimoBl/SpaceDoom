@@ -1,4 +1,6 @@
 var app = require('express')();
+var path = require("path")
+var express = require('express')
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 const port = process.env.PORT || 8000;
@@ -10,6 +12,8 @@ app.get('/', function(req, res){
 http.listen(port, function(){
   console.log('listening on: ' + port);
 });
+
+app.use('/static', express.static(path.join(__dirname, 'public')))
 
 io.on('connection', function(socket){
   console.log("New user connected")
@@ -186,6 +190,7 @@ function get_menu(){
     <br>
     <br>
     P.S Les suggestions/critiques sont le bienvenu
+    <img src="static/octocat.png">
     </center> `
   return menu
 }
