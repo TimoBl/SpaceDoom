@@ -1,9 +1,21 @@
+//module variables
 var app = require('express')();
 var path = require("path")
 var express = require('express')
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 const port = process.env.PORT || 8000;
+
+//game variables
+var bound = {x0: 0, y0: 0, x1: 2560, y1: 1440}
+var bounciness = 0.5
+var players = []
+var bullets = []
+var asteroids = []
+var shoot_freq = 20
+var shoot_force = 30
+var player_speed = 0.1
+var max_collision_damage = 30
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -21,7 +33,7 @@ io.on('connection', function(socket){
   var text = get_menu()
   socket.emit("change_html", text)
 
-  socket.on('start_game', function(name) {
+  socket.on('init_game', function(name) {
     if (name.length > 0 && name.length <= 10 && players.length <= 6){
       player = get_new_player(name, socket.id)
       players.push(player)
@@ -29,6 +41,8 @@ io.on('connection', function(socket){
       var text = get_canvas()
       text += '<script src="static/client.js"></script>'
       socket.emit("change_html", text)
+      socket.emit("start_game", bound, asteroids)
+      io.sockets.emit("update_stats", players)
     }
   })
 
@@ -59,18 +73,8 @@ io.on('connection', function(socket){
     players = players.filter(obj => {
       return obj.id !== socket.id
     })
-    console.log("User disconnected")
   });
 });
-
-var bound = {x0: 0, y0: 0, x1: 2000, y1: 1000}
-var bounciness = 0.75
-var players = []
-var bullets = []
-var asteroids = []
-var shoot_freq = 30
-var shoot_force = 30
-var player_speed = 0.1
 
 init_map()
 
@@ -83,17 +87,22 @@ setInterval(() => {
     a = move(players, bullets)
     players = a[0]
     bullets = a[1]
-    players = sort_player_list(players)
     io.sockets.emit('update', players, bullets);
   }
 }, 1000 / 60);
 
 
 function init_map(){
-  var ast = {x: 400, y: 100, r: 100, ir: 400}
+  var ast = {x: 400, y: 300, r: 60, ir: 120}
   asteroids.push(ast)
 
-  var ast = {x: 900, y: 600, r: 60, ir: 200}
+  var ast = {x: 1000, y: 1000, r: 120, ir: 300}
+  asteroids.push(ast)
+
+  var ast = {x: 1600, y: 800, r: 40, ir: 80}
+  asteroids.push(ast)
+
+  var ast = {x: 1300, y: 1200, r: 50, ir: 140}
   asteroids.push(ast)
 }
 
@@ -164,7 +173,7 @@ function get_menu(){
     <h1>Asteroid Multiplayer Game</h1>
     <i>C'est un premier essai pour mon tm</i><br><br>
     <input id="name_input" placeholder="Name: ">
-    <button onclick="socket.emit(\'start_game\', document.getElementById('name_input').value)">Start Game</button>
+    <button onclick="socket.emit(\'init_game\', document.getElementById('name_input').value)">Start Game</button>
     <br>
     <br>
     <br>
@@ -178,6 +187,9 @@ function get_menu(){
     <br>
     <br>
     [d] ou [rightArrow] = tourner à droite
+    <br>
+    <br>
+    [shift] = permet de ralentir la rotation afin de mieux viser
     <br>
     <br>
     [spacebar] = tirer
@@ -218,6 +230,11 @@ function move(players, bullets){
     players[i].vy += players[i].input_t * Math.sin(players[i].rot) * player_speed
     players[i].x += players[i].vx
     players[i].y += players[i].vy
+    if (players[i].health < 100){
+      players[i].health += 0.05
+    } else {
+      players[i].health = 100
+    }
   }
 
   for (var i = bullets.length - 1; i >= 0; i--){
@@ -265,6 +282,8 @@ function update_map(players, bullets, asteroids){
     if (players[j].health <= 0){
       players[j].health = 100
       players[j].killed += 1
+      players = sort_player_list(players)
+      io.sockets.emit('update_stats', players)
     }
   }
   return [players, bullets, asteroids]
@@ -303,7 +322,7 @@ function get_collision_to(j, players, collided){
         var nvx2 = p1.vx * bounciness
         var nvy2 = p1.vy * bounciness
         
-        var damage = parseInt((Math.pow(p1.vx - p2.vx, 2) + Math.pow(p1.vy - p2.vy, 2)))
+        var damage = Math.min(parseInt((Math.pow(p1.vx - p2.vx, 2) + Math.pow(p1.vy - p2.vy, 2))), max_collision_damage)
 
         var nx1 = cx + (p1.r + p2.r) * dx / d
         var ny1 = cy + (p1.r + p2.r) * dy / d
@@ -325,6 +344,8 @@ function get_collision_to(j, players, collided){
           p1.health = 100
           p1.killed += 1
           p2.kills += 1
+          players = sort_player_list(players)
+          io.sockets.emit('update_stats', players)
         }
 
         p2.health -= damage
@@ -332,6 +353,8 @@ function get_collision_to(j, players, collided){
           p2.health = 100
           p2.killed += 1
           p1.kills += 1
+          players = sort_player_list(players)
+          io.sockets.emit('update_stats', players)
         }
 
         collided.push(j)
@@ -366,7 +389,7 @@ function get_bullet_collision(j, players, bullets){
     if (bullets[i].state == "shot"){
       var d = Math.pow(players[j].x - bullets[i].x, 2) + Math.pow(players[j].y - bullets[i].y, 2)
       if (d < (players[j].r * players[j].r) && bullets[i].id !== players[j].id){
-        players[j].health -= 10
+        players[j].health -= 50
         if (players[j].health <= 0){
           players[j].health = 100
           var player = players.filter(obj => {
@@ -394,7 +417,9 @@ function get_asteroid_collision(p, asteroids){
 
       p.vx = -9 * p.vx / 10
       p.vy = -9 * p.vy / 10
-      p.health -= parseInt((Math.pow(p.vx, 2) + Math.pow(p.vy, 2)))
+
+      var damage = parseInt((Math.pow(p.vx, 2) + Math.pow(p.vy, 2)))
+      p.health -= Math.min(damage, max_collision_damage)
     } else if (d < (p.r + asteroids[i].ir)){
       let dx = asteroids[i].x - p.x 
       let dy = asteroids[i].y - p.y
