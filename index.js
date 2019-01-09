@@ -16,6 +16,7 @@ var shoot_freq = 20
 var shoot_force = 30
 var player_speed = 0.1
 var max_collision_damage = 30
+var max_velocity = 10
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -228,6 +229,10 @@ function move(players, bullets){
     players[i].rot += (players[i].input_r / 10)
     players[i].vx += players[i].input_t * Math.cos(players[i].rot) * player_speed
     players[i].vy += players[i].input_t * Math.sin(players[i].rot) * player_speed
+    if (players[i].vx > max_velocity){players[i].vx = max_velocity}
+    if (players[i].vy > max_velocity){players[i].vy = max_velocity}
+    if (players[i].vx < -max_velocity){players[i].vx = -max_velocity}
+    if (players[i].vy < -max_velocity){players[i].vy = -max_velocity}
     players[i].x += players[i].vx
     players[i].y += players[i].vy
     if (players[i].health < 100){
