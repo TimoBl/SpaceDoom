@@ -61,10 +61,10 @@ document.addEventListener('keyup', function(event) {
   if (event.keyCode == "16"){shift_inp = 1}
 }, false)
 
-document.body.addEventListener("touchmove", function(event) {
-    event.preventDefault();
-    event.stopPropagation();
-}, false);
+window.addEventListener ("touchmove", function (event) {
+  event.preventDefault ();
+  event.stopPropagation();
+}, {passive: false});
 
 socket.on('update_stats', function(players){
   console.log("update")
