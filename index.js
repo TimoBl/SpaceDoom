@@ -221,7 +221,7 @@ function get_canvas(){
   <canvas id="backCanvas" style="position: absolute; z-index: 0;"></canvas>
   <canvas id="myCanvas" style="position: absolute; z-index: 1;"></canvas>
   <canvas id="shaderCanvas" style="position: absolute; z-index: 2;"></canvas>
-  <div id="player_container" style="width: 160px; right: 10px; top: 10px; position: absolute; background-color: rgba(102, 102, 102, 0.5)">
+  <div id="player_container" style="width: 160px; right: 10px; top: 10px; position: absolute; background-color: rgba(102, 102, 102, 0.5); z-index: 3">
     <div id="player_list" style="color: white; margin: 5px"></div>
   </div>
   `

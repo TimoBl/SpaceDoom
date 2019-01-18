@@ -17,6 +17,7 @@ var bound;
 var asteroids;
 var game_started = false;
 var shift_inp = 1;
+var trail = []
 
 var background_image = new Image()
 background_image.src = "static/Background.png"
@@ -97,12 +98,13 @@ socket.on('update', function(players, bullets) {
         if (players[i].input_t !== 0){
           draw_thrust(x, y, players[i].r, players[i].rot)
         }
+
         draw_light(x, y, players[i].r, players[i].rot)
         draw_shield(x, y, players[i].r, players[i].health/100)
       }
     }
   }
-
+  //draw_trail(player.input_t, player.x, player.y, player.r, player.rot, dx, dy)
   draw_mini_map(players, asteroids, player.x, player.y)
   //display_player_rank(players)
 })
@@ -274,6 +276,29 @@ function draw_thrust(x, y, r, rot){
     sctx.lineTo(x1, y1)
   }
   sctx.fill()
+}
+
+function draw_trail(input_t, x, y, r, rot, dx, dy){
+	if (input_t !== 0){
+		var x1 = x - Math.sin(rot + Math.PI / 2) * r
+    	var y1 = y + Math.cos(rot + Math.PI / 2) * r
+		var t = {x: x1, y: y1, r: r/3}
+		trail.unshift(t)
+	}
+
+	sctx.fillStyle = "#500696"
+	sctx.globalAlpha = 0.5
+	for (var i = 0, l = trail.length; i < l; i++){
+		trail[i].r -= 0.5
+
+		if (trail[i].r <= 0){
+			trail.splice(i, 1)
+		} else {
+			sctx.beginPath();
+			sctx.arc(trail[i].x + dx, trail[i].y + dy, trail[i].r, 0, 2 * Math.PI);
+			sctx.fill();
+		}
+	}
 }
 
 function draw_light(x, y, r, rot){
