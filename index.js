@@ -30,18 +30,21 @@ app.use('/static', express.static(path.join(__dirname, 'public')))
 
 io.on('connection', function(socket){
   console.log("New user connected")
-
-  player = get_new_player(socket.id)
-  socket.emit('init_view', bound, player.x, player.y)
   
+  var player;
 
+  socket.on('init', function(){
+    player = get_new_player(socket.id)
+    socket.emit('init_view', bound, player.x, player.y)
+  })
+  
   socket.on('init_game', function(name) {
-    if (name.length > 0 && name.length <= 10 && players.length <= 6){
+    if (name.length > 0 && name.length <= 8 && players.length <= 6){
       player.name = name
       players.push(player)
 
       socket.emit("start_game", asteroids)
-      io.sockets.emit("update_stats", players)
+      //io.sockets.emit("update_stats", players)
     }
   })
 

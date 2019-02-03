@@ -1,17 +1,9 @@
-var bc = $("#backCanvas")[0]
-bc.width = window.innerWidth
-bc.height = window.innerHeight
-var bctx = bc.getContext('2d')
-
-var c = $("#myCanvas")[0]
-c.width = window.innerWidth
-c.height = window.innerHeight
-var ctx = c.getContext('2d')
-
-var sc = $("#shaderCanvas")[0]
-sc.width = window.innerWidth
-sc.height = window.innerHeight
-var sctx = sc.getContext('2d')
+var bc;
+var bctx;
+var c;
+var ctx;
+var sc;
+var sctx;
 
 var bound;
 var asteroids;
@@ -24,16 +16,33 @@ background_image.src = "static/Background.png"
 
 socket.on('init_view', function(bounds, x, y){
   bound = bounds
+
+  bc = $("#backCanvas")[0]
+  bc.width = window.innerWidth
+  bc.height = window.innerHeight
+  bctx = bc.getContext('2d')
+
+  c = $("#myCanvas")[0]
+  c.width = window.innerWidth
+  c.height = window.innerHeight
+  ctx = c.getContext('2d')
+
+  sc = $("#shaderCanvas")[0]
+  sc.width = window.innerWidth
+  sc.height = window.innerHeight
+  sctx = sc.getContext('2d')
+
   var dx = parseInt(c.width / 2) - x
   var dy = parseInt(c.height / 2) - y
-  draw_background(bctx, dx, dy, background_image)
+
+  draw_background(bc, bctx, dx, dy, background_image)
 })
 
 socket.on('start_game', function(asteroid) {
   asteroids = asteroid
-  game_started = true
   init_inputs()
   $("#title_container")[0].style.display = "none"
+  game_started = true
 })
 
 socket.on('disconnect', function() {
@@ -68,8 +77,8 @@ function update(players, bullets){
 
     border = 100
 
-    draw_background(bctx, dx, dy, background_image)
-    draw_bullets(ctx, dx, dy, bullets)
+    draw_background(bc, bctx, dx, dy, background_image)
+    draw_bullets(c, ctx, dx, dy, bullets)
     draw_asteroids(ctx, dx, dy, asteroids)
 
     for (var i = 0; i < players.length; i++){
@@ -86,7 +95,8 @@ function update(players, bullets){
         draw_shield(ctx, x, y, players[i].r, players[i].health/100)
       }
     }
+
+    draw_mini_map(sctx, players, asteroids, player.x, player.y)
   }
-  draw_mini_map(sctx, players, asteroids, player.x, player.y)
-  display_player_rank(players)
+  //display_player_rank(players)
 }

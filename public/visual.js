@@ -1,9 +1,9 @@
-function draw_background(canvas, dx, dy, img){
-  canvas.fillRect(0, 0, canvas.width, canvas.height);
-  canvas.drawImage(img, dx, dy, bound.x1, bound.y1)
+function draw_background(c, canvas, dx, dy, img){
+  canvas.fillRect(0, 0, c.width, c.height);
+  canvas.drawImage(img, dx, dy, bound.x1, bound.y1);
 }
 
-function draw_bullets(canvas, dx, dy, bullets){
+function draw_bullets(c, canvas, dx, dy, bullets){
   canvas.fillStyle = "green"
   for (var i = 0; i < bullets.length; i++){
     var x = dx + bullets[i].x
