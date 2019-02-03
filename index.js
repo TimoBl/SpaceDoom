@@ -31,18 +31,16 @@ app.use('/static', express.static(path.join(__dirname, 'public')))
 io.on('connection', function(socket){
   console.log("New user connected")
 
-  var text = get_menu()
-  socket.emit("change_html", text)
+  player = get_new_player(socket.id)
+  socket.emit('init_view', bound, player.x, player.y)
+  
 
   socket.on('init_game', function(name) {
     if (name.length > 0 && name.length <= 10 && players.length <= 6){
-      player = get_new_player(name, socket.id)
+      player.name = name
       players.push(player)
 
-      var text = get_canvas()
-      text += '<script src="static/client.js"></script>'
-      socket.emit("change_html", text)
-      socket.emit("start_game", bound, asteroids)
+      socket.emit("start_game", asteroids)
       io.sockets.emit("update_stats", players)
     }
   })
@@ -74,6 +72,7 @@ io.on('connection', function(socket){
     players = players.filter(obj => {
       return obj.id !== socket.id
     })
+    console.log("user disconnected")
   });
 });
 
@@ -107,11 +106,11 @@ function init_map(){
   asteroids.push(ast)
 }
 
-function get_new_player(name, id){
-  var nx = 100 + Math.random() * (bound.x1 - 100)
-  var ny = 100 + Math.random() * (bound.y1 - 100)
+function get_new_player(id){
+  var nx = parseInt((Math.random() - 0.5) * 200 + bound.x1 / 2)
+  var ny = parseInt((Math.random() - 0.5) * 200 + bound.y1 / 2)
   var player = {
-    name: name, 
+    name: "", 
     id: id,
     x:nx , y: ny, 
     rot: -Math.PI / 2, 
@@ -168,59 +167,8 @@ function get_asteroids(){
   return text
 }
 
-function get_menu(){
-  var menu = `
-    <center>
-    <h1>Asteroid Multiplayer Game</h1>
-    <i>C'est un premier essai pour mon tm</i><br><br>
-    <input id="name_input" placeholder="Name: ">
-    <button onclick="socket.emit(\'init_game\', document.getElementById('name_input').value)">Start Game</button>
-    <br>
-    <br>
-    <br>
-    <b>Les commandes</b>
-    <br>
-    <br>
-    [w] ou [upArrow] = avancer
-    <br>
-    <br>
-    [a] ou [leftArrow] = tourner à gaucher
-    <br>
-    <br>
-    [d] ou [rightArrow] = tourner à droite
-    <br>
-    <br>
-    [shift] = permet de ralentir la rotation afin de mieux viser
-    <br>
-    <br>
-    [spacebar] = tirer
-    <br>
-    <br>
-    <br>
-    <b>Les instructions</b>
-    <br>
-    <br>
-    Détruire l'autre...
-    <br>
-    <br>
-    <br>
-    <i><b>Bon jeu!</b></i>
-    <br>
-    <br>
-    P.S Les suggestions/critiques sont le bienvenu
-    <br>
-    <br>
-    <br>
-    <i>Timo Blattner</i>
-    </center> `
-  return menu
-}
-
 function get_canvas(){
   var canvas = `
-  <canvas id="backCanvas" style="position: absolute; z-index: 0;"></canvas>
-  <canvas id="myCanvas" style="position: absolute; z-index: 1;"></canvas>
-  <canvas id="shaderCanvas" style="position: absolute; z-index: 2;"></canvas>
   <div id="player_container" style="width: 160px; right: 10px; top: 10px; position: absolute; background-color: rgba(102, 102, 102, 0.5); z-index: 3">
     <div id="player_list" style="color: white; margin: 5px"></div>
   </div>
