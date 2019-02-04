@@ -4,7 +4,8 @@ function draw_background(c, canvas, dx, dy, img){
 }
 
 function draw_bullets(c, canvas, dx, dy, bullets){
-  canvas.fillStyle = "green"
+  canvas.globalAlpha = 1.0
+  canvas.fillStyle = "#00ffff"
   for (var i = 0; i < bullets.length; i++){
     var x = dx + bullets[i].x
     var y = dy + bullets[i].y
