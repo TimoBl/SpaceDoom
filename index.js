@@ -44,7 +44,7 @@ io.on('connection', function(socket){
       players.push(player)
 
       socket.emit("start_game", asteroids)
-      //io.sockets.emit("update_stats", players)
+      io.sockets.emit("update_stats", players)
     }
   })
 
@@ -168,15 +168,6 @@ function get_asteroids(){
   }
   text += "]"
   return text
-}
-
-function get_canvas(){
-  var canvas = `
-  <div id="player_container" style="width: 160px; right: 10px; top: 10px; position: absolute; background-color: rgba(102, 102, 102, 0.5); z-index: 3">
-    <div id="player_list" style="color: white; margin: 5px"></div>
-  </div>
-  `
-  return canvas
 }
 
 function move(players, bullets){

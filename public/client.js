@@ -11,6 +11,8 @@ var game_started = false;
 var shift_inp = 1;
 var trail = []
 
+var socket = io();
+
 var background_image = new Image()
 background_image.src = "static/Background.png"
 
@@ -43,6 +45,7 @@ socket.on('start_game', function(asteroid) {
   init_inputs()
   $("#title_container")[0].style.display = "none"
   game_started = true
+  //add_player_list()
 })
 
 socket.on('disconnect', function() {
@@ -51,7 +54,6 @@ socket.on('disconnect', function() {
 });
 
 socket.on('update_stats', function(players){
-  console.log("update")
   display_player_rank(players)
 })
 
@@ -99,4 +101,12 @@ function update(players, bullets){
     draw_mini_map(sctx, players, asteroids, player.x, player.y)
   }
   //display_player_rank(players)
+}
+
+function add_player_list(){
+  var canvas = `
+  <div id="player_container" style="width: 160px; right: 10px; top: 10px; position: absolute; background-color: rgba(102, 102, 102, 0.5); z-index: 4">
+    <div id="player_list" style="color: white; margin: 5px"></div>
+  </div> `
+  document.body.innerHTML += canvas;
 }
