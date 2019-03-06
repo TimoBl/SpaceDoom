@@ -83,6 +83,8 @@ function update(players, bullets){
     draw_bullets(c, ctx, dx, dy, bullets)
     draw_asteroids(ctx, dx, dy, asteroids)
 
+    //draw_shadows(sctx, player.x, player.y, player.rot, dx, dy, asteroids)
+
     for (var i = 0; i < players.length; i++){
       var x = dx + players[i].x
       var y = dy + players[i].y
@@ -93,14 +95,14 @@ function update(players, bullets){
           draw_thrust(ctx, x, y, players[i].r, players[i].rot)
         }
 
-        draw_light(sctx, x, y, players[i].r, players[i].rot)
+        //draw_light(sctx, x, y, players[i].r, players[i].rot)
         draw_shield(ctx, x, y, players[i].r, players[i].health/100)
       }
     }
 
     draw_mini_map(sctx, players, asteroids, player.x, player.y)
   }
-  //display_player_rank(players)
+  display_player_rank(players)
 }
 
 function add_player_list(){

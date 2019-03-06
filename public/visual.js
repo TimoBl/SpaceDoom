@@ -224,10 +224,65 @@ function draw_light(canvas, x, y, r, rot){
   canvas.fill()
 }
 
+function draw_shadows(canvas, x, y, rot, cx, cy, asteroids){
+	var rotations = [];
+
+	for (var a = 0; a < asteroids.length; a++){
+		var dx = asteroids[a].x - x
+		var dy = asteroids[a].y - y
+
+		var r = asteroids[a].r
+
+		var d = Math.sqrt(dx * dx + dy * dy)
+		var l = Math.sqrt((d * d) - (r * r))
+		
+		var alpha = Math.asin(r / d)
+		var angle = Math.atan2(dy, dx)
+
+    	var l2 = 10000;
+
+    	var rot0 = {angle:(angle + alpha + 0.1), l:l2}
+		var rot1 = {angle:(angle + alpha), l:l}
+		var rot2 = {angle:(angle - alpha), l:l}
+    	var rot3 = {angle:(angle - alpha - 0.1), l:l2}
+
+    	rotations.push(rot0)
+		rotations.push(rot1)
+		rotations.push(rot2)
+    	rotations.push(rot3)
+	}
+
+	sortArrayOfObjects = (arr, key) => {
+    	return arr.sort((a, b) => {
+        	return a[key] - b[key];
+    	});
+	};
+
+	sortArrayOfObjects(rotations, "angle");
+
+	rotations = rotations.sort()
+	canvas.fillStyle = "#FF0000";
+
+	for (var a = 0; a < rotations.length - 1; a++){
+    canvas.beginPath()
+    canvas.moveTo(x + cx, y + cy)
+    
+		var x1 = Math.cos(rotations[a].angle) * rotations[a].l + x
+		var y1 = Math.sin(rotations[a].angle) * rotations[a].l + y
+		canvas.lineTo(x1 + cx, y1 + cy)
+
+    var x1 = Math.cos(rotations[a+1].angle) * rotations[a+1].l + x
+    var y1 = Math.sin(rotations[a+1].angle) * rotations[a+1].l + y
+    canvas.lineTo(x1 + cx, y1 + cy)
+
+    canvas.fill()
+	}
+}
+
 function display_player_rank(players){
-  var text = "<table><tr><th style='text-align:center'>Player</th><th style='text-align:center'>Killed</th><th style='text-align:center'>Kills</th></tr>"
+  var text = "<table><tr><th>Player</th><th>Killed</th><th>Kills</th></tr>"
   for (var i = 0; i < players.length; i++){
-    text += "<tr><td style='text-align:center'>" + players[i].name + "</td><td style='text-align:center'>" + players[i].killed.toString() + "</td><td style='text-align:center'>" + players[i].kills.toString() + "</td><tr>"
+    text += "<tr style='color: " + players[i].color + "'><td>" + players[i].name + "</td><td>" + players[i].killed.toString() + "</td><td>" + players[i].kills.toString() + "</td><tr>"
   }
   text += "</table>"
   $("#player_list").html(text)

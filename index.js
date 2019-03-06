@@ -100,13 +100,13 @@ function init_map(){
   asteroids.push(ast)
 
   var ast = {x: 1000, y: 1000, r: 120, ir: 300}
-  asteroids.push(ast)
+  //asteroids.push(ast)
 
   var ast = {x: 1600, y: 800, r: 40, ir: 80}
-  asteroids.push(ast)
+  //asteroids.push(ast)
 
   var ast = {x: 1300, y: 1200, r: 50, ir: 140}
-  asteroids.push(ast)
+  //asteroids.push(ast)
 }
 
 function get_new_player(id){
@@ -366,11 +366,16 @@ function get_asteroid_collision(p, asteroids){
       p.x = ((asteroids[i].r + p.r) * dx / d) + asteroids[i].x
       p.y = ((asteroids[i].r + p.r) * dy / d) + asteroids[i].y
 
-      p.vx = -9 * p.vx / 10
-      p.vy = -9 * p.vy / 10
+      if ((Math.abs(p.vx) > 0.5) && (Math.abs(p.vy) > 0.5)){
+        p.vx = -9 * p.vx / 10
+        p.vy = -9 * p.vy / 10
 
-      var damage = parseInt((Math.pow(p.vx, 2) + Math.pow(p.vy, 2)))
-      p.health -= Math.min(damage, max_collision_damage)
+        var damage = parseInt((Math.pow(p.vx, 2) + Math.pow(p.vy, 2)))
+        p.health -= Math.min(damage, max_collision_damage)
+      } else {
+        p.vx = 0
+        p.vy = 0
+      }
     } else if (d < (p.r + asteroids[i].ir)){
       let dx = asteroids[i].x - p.x 
       let dy = asteroids[i].y - p.y
