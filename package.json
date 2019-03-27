@@ -1,7 +1,7 @@
 {
-  "name": "Asteroid_Game_Prototype",
+  "name": "Space Doom",
   "version": "0.0.1",
-  "description": "An online asteroid game prototype",
+  "description": "An online space multiplayer game",
   "engines": {
     "node": "10.x"
   },

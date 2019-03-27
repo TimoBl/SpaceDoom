@@ -1,6 +1,6 @@
 function draw_background(c, canvas, dx, dy, img){
   canvas.fillRect(0, 0, c.width, c.height);
-  canvas.drawImage(img, dx, dy, bound.x1, bound.y1);
+  canvas.drawImage(img, dx, dy, 2 * (limit.x1 - limit.x0), 2 * (limit.y1 - limit.y0));
 }
 
 function draw_bullets(c, canvas, dx, dy, bullets){
@@ -86,16 +86,16 @@ function display_player_info(canvas, player, x, y){
 function draw_borders(canvas, dx, dy){
   canvas.lineWidth = 3
   canvas.beginPath();
-  canvas.moveTo(bound.x0 + dx, bound.y0 + dy);
-  canvas.lineTo(bound.x1 + dx, bound.y0 + dy);
-  canvas.lineTo(bound.x1 + dx, bound.y1 + dy);
-  canvas.lineTo(bound.x0 + dx, bound.y1 + dy);
-  canvas.lineTo(bound.x0 + dx, bound.y0 + dy);
+  canvas.moveTo(limit.x0 + dx, limit.y0 + dy);
+  canvas.lineTo(limit.x1 + dx, limit.y0 + dy);
+  canvas.lineTo(limit.x1 + dx, limit.y1 + dy);
+  canvas.lineTo(limit.x0 + dx, limit.y1 + dy);
+  canvas.lineTo(limit.x0 + dx, limit.y0 + dy);
   canvas.stroke();
 }
 
 function draw_mini_map(canvas, players, asteroids, x, y){
-  var w = parseInt(bound.x1 / 50 + bound.y1 / 50)
+  var w = parseInt(limit.x1 / 50 + limit.y1 / 50)
   border = 20
   canvas.globalAlpha = 1.0
   canvas.strokeStyle = "rgba(0, 175, 35, 0.6)"
@@ -168,29 +168,6 @@ function draw_thrust(canvas, x, y, r, rot){
   canvas.fill()
 }
 
-function draw_trail(canvas, input_t, x, y, r, rot, dx, dy){
-	if (input_t !== 0){
-		var x1 = x - Math.sin(rot + Math.PI / 2) * r
-    	var y1 = y + Math.cos(rot + Math.PI / 2) * r
-		var t = {x: x1, y: y1, r: r/3}
-		trail.unshift(t)
-	}
-
-	canvas.fillStyle = "#500696"
-	canvas.globalAlpha = 0.5
-	for (var i = 0, l = trail.length; i < l; i++){
-		trail[i].r -= 0.5
-
-		if (trail[i].r <= 0){
-			trail.splice(i, 1)
-		} else {
-			canvas.beginPath();
-			canvas.arc(trail[i].x + dx, trail[i].y + dy, trail[i].r, 0, 2 * Math.PI);
-			canvas.fill();
-		}
-	}
-}
-
 function show_player_info(canvas, player, x, y){
   r = player.r
 
@@ -224,9 +201,10 @@ function draw_light(canvas, x, y, r, rot){
   canvas.fill()
 }
 
-function draw_shadows(canvas, x, y, rot, cx, cy, asteroids){
+function draw_shadows(ctx, width, height, x, y, rot, cx, cy, asteroids){
 	var rotations = [];
 
+	//get all the angles for asteroids
 	for (var a = 0; a < asteroids.length; a++){
 		var dx = asteroids[a].x - x
 		var dy = asteroids[a].y - y
@@ -241,16 +219,45 @@ function draw_shadows(canvas, x, y, rot, cx, cy, asteroids){
 
     	var l2 = 10000;
 
-    	var rot0 = {angle:(angle + alpha + 0.1), l:l2}
+    	var rot0 = {angle:(angle + alpha + 0.0001), l:l2}
 		var rot1 = {angle:(angle + alpha), l:l}
 		var rot2 = {angle:(angle - alpha), l:l}
-    	var rot3 = {angle:(angle - alpha - 0.1), l:l2}
+    	var rot3 = {angle:(angle - alpha - 0.0001), l:l2}
 
-    	rotations.push(rot0)
+    rotations.push(rot0)
 		rotations.push(rot1)
 		rotations.push(rot2)
-    	rotations.push(rot3)
+    rotations.push(rot3)
 	}
+
+	//get angles for border
+	var dx = -x
+	var dy = -y
+	var angle = Math.atan2(dy, dx)
+	var l = Math.sqrt(dx * dx + dy * dy)
+	var rot = {angle:angle, l:l}
+	rotations.push(rot)
+
+	var dx = width - x
+	var dy = -y
+	var angle = Math.atan2(dy, dx)
+	var l = Math.sqrt(dx * dx + dy * dy)
+	var rot = {angle:angle, l:l}
+	rotations.push(rot)
+
+	var dx = -x
+	var dy = height - y
+	var angle = Math.atan2(dy, dx)
+	var l = Math.sqrt(dx * dx + dy * dy)
+	var rot = {angle:angle, l:l}
+	rotations.push(rot)
+
+	var dx = width - x
+	var dy = height - y
+	var angle = Math.atan2(dy, dx)
+	var l = Math.sqrt(dx * dx + dy * dy)
+	var rot = {angle:angle, l:l}
+	rotations.push(rot)
 
 	sortArrayOfObjects = (arr, key) => {
     	return arr.sort((a, b) => {
@@ -261,21 +268,27 @@ function draw_shadows(canvas, x, y, rot, cx, cy, asteroids){
 	sortArrayOfObjects(rotations, "angle");
 
 	rotations = rotations.sort()
-	canvas.fillStyle = "#FF0000";
+	ctx.fillStyle = "#FF0000";
+	ctx.globalAlpha = 0.5;
 
-	for (var a = 0; a < rotations.length - 1; a++){
-    canvas.beginPath()
-    canvas.moveTo(x + cx, y + cy)
+	for (var a = 0; a < rotations.length; a++){
+    	ctx.beginPath()
+    	ctx.moveTo(x + cx, y + cy)
     
-		var x1 = Math.cos(rotations[a].angle) * rotations[a].l + x
-		var y1 = Math.sin(rotations[a].angle) * rotations[a].l + y
-		canvas.lineTo(x1 + cx, y1 + cy)
+    	var a1 = a%(rotations.length)
+    	var a2 = (a+1)%(rotations.length)
 
-    var x1 = Math.cos(rotations[a+1].angle) * rotations[a+1].l + x
-    var y1 = Math.sin(rotations[a+1].angle) * rotations[a+1].l + y
-    canvas.lineTo(x1 + cx, y1 + cy)
+    	console.log(a1, a2)
 
-    canvas.fill()
+		var x1 = Math.cos(rotations[a1].angle) * rotations[a1].l + x
+		var y1 = Math.sin(rotations[a1].angle) * rotations[a1].l + y
+		ctx.lineTo(x1 + cx, y1 + cy)
+
+		var x1 = Math.cos(rotations[a2].angle) * rotations[a2].l + x
+    	var y1 = Math.sin(rotations[a2].angle) * rotations[a2].l + y
+    	ctx.lineTo(x1 + cx, y1 + cy)
+
+    	ctx.fill()
 	}
 }
 
