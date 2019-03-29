@@ -84,15 +84,15 @@ Bullet.prototype.move = function (index){
   }
 }
 
-function Game(){
-  this.name = String(parseInt(Math.random() * 100000))
+function MultiGame(name){
+  this.name = name
+  this.limit = {x0: 0, y0: 0, x1: 2560, y1: 1440}
   this.players = []
   this.bullets = []
-  this.asteroids = []
-  this.limit = {x0: 0, y0: 0, x1: 2560, y1: 1440}
+  this.asteroids = generate_map(this.limit, 40)
 }
 
-Game.prototype.update = function (){
+MultiGame.prototype.update = function (){
   if (this.players.length > 0){
     this.players = get_player_collisions(this.players, this.asteroids)
     var items = get_bullet_collisions(this.bullets, this.players, this.asteroids)
@@ -122,11 +122,6 @@ var rotation_speed = 0.1
 
 var games = []
 
-var g = new Game()
-games.push(g)
-var g = new Game()
-games.push(g)
-
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/start.html');
 });
@@ -150,10 +145,26 @@ io.on('connection', function(socket){
   socket.on('init_open_world_game', function() {
     socket.emit("change_html", get_game_list())
   })
+
+  socket.on('create_game', function(game_name, name) {
+    if (game_name.length > 0 && game_name.length <= 8 && name.length > 0 && name.length <= 8){
+      socket.game_name = String(game_name)
+
+      game = new MultiGame(socket.game_name)
+      game.players.push(player)
+      games.push(game)
+
+      player.name = name
+
+      socket.join(socket.game_name)
+      socket.emit("change_html", get_game_html())
+      socket.emit("start_game", game.asteroids)
+      socket.emit("update_stats", game.players)
+    }
+  })
   
-  socket.on('init_game', function(game_name) {
+  socket.on('init_game', function(game_name, name) {
     socket.game_name = String(game_name)
-    var name = "hello"
 
     game = games.find(x => x.name === socket.game_name)
     if (name.length > 0 && name.length <= 8 && game.players.length <= 6){
@@ -198,7 +209,6 @@ io.on('connection', function(socket){
   });
 });
 
-
 setInterval(() => {
   for (var x = 0; x < games.length; x++){
     games[x].update()
@@ -233,7 +243,7 @@ function get_player_collisions(players, asteroids){
     var p = players[i]
 
     for (var j = asteroids.length - 1; j >= 0; j--){
-      var a = asteroids[i]
+      var a = asteroids[j]
 
       var dx = p.x - a.x
       var dy = p.y - a.y 
@@ -245,8 +255,8 @@ function get_player_collisions(players, asteroids){
         p.x = ((a.r + p.r + 1) * dx / distance) + a.x
         p.y = ((a.r + p.r + 1) * dy / distance) + a.y
 
-        p.vx = -9 * p.vx / 10
-        p.vy = -9 * p.vy / 10
+        p.vx = -7 * p.vx / 10
+        p.vy = -7 * p.vy / 10
         return players
       }
     }
@@ -292,17 +302,19 @@ function get_bullet_collisions(bullets, players, asteroids){
 }
 
 function get_game_html(){
-  var text = '<img src="static/menu.png" onclick="console.log(\"leave\")" style="width: 10%; height: 10%; top: 0px; left: 0px; z-index: 3">'
+  var text = '<img src="static/menu.png" onclick="location.reload()" style="position: absolute; cursor: pointer; width: 50px; height: 50px; top: 10px; right: 10px; z-index: 3;">'
   return text
 }
 
 function get_game_list(){
-  var text = "<div id='title_container'><div id='title_vertical_container'><center><table style='z-index: 3;'>"
+  var text = "<div id='title_container'><div id='title_vertical_container'><center><input id='name_input' placeholder='Name' class='style'><table style='z-index: 3;'>"
   text += "<tr><th>Game Name</th><th>Number of Players</th><th>Join</th></tr>"
   for (var x = 0; x < games.length; x++){
-    text += `<tr><td>Game` + games[x].name + `</td><td>` + games[x].players.length + `</td><td><button type="button" onclick="socket.emit('init_game', ` + games[x].name + `)">Join</button></td></tr>`
+    text += `<tr><td>Game` + games[x].name + `</td><td>` + games[x].players.length + `</td><td><button type="button" class='style' onclick="socket.emit('init_game', '` + games[x].name + `', $(\'#name_input\').val())">Join</button></td></tr>`
   }
-  text += "</table></center></div></div>"
+  text += "</table></center>"
+  text += "<form id='game_container'><input id='game_input' class='style' placeholder='Game Name'><button id='game_submit' type='button' class='style' onclick='socket.emit(\"create_game\", $(\"#game_input\").val(), $(\"#name_input\").val())'>New Game</button></form>"
+  text += "</div></div>"
   return text
 }
 
@@ -311,7 +323,7 @@ function sort_player_list(players){
     if ((players[i].kills - players[i].killed) < (players[i + 1].kills - players[i + 1].killed)){
       var temp = players[i]
       players[i] = players[i + 1]
-      plsayers[i + 1] = temp
+      players[i + 1] = temp
     } else if ((players[i].kills - players[i].killed) === (players[i + 1].kills - players[i + 1].killed)){
       if (players[i].kills < players[i].killed){
         var temp = players[i]
@@ -330,4 +342,34 @@ function get_random_color(){
   var color = "rgba(" + r + ", " + g + ", " + b + ", 1)"
   return color
 }
+
+function generate_map(limit, n){
+  var asteroids = []
+  for (var i = n; i > 0; i--){
+    var border = 20
+    var x = parseInt(limit.x0 + border + (limit.x1 - limit.x0 - 2 * border) * Math.random())
+    var y = parseInt(limit.y0 + border + (limit.y1 - limit.y0 - 2 * border) * Math.random())
+    var r = 20 + parseInt(Math.random() * 30)
+    var asteroid = {x:x, y:y, r:r}
+    var y = true
+    for (var j = 0; j < asteroids.length; j++){
+      var a = asteroid
+      var b = asteroids[j]
+      var distance = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
+      var radius = a.r + b.r
+      if (distance < 2 * radius){
+        y = false
+        break
+      } 
+    }
+
+    if (y == true){
+      asteroids.push(asteroid)
+    } else {
+      i -= 1
+    }
+  }
+  return asteroids
+}
+
     

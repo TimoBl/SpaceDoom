@@ -1,6 +1,6 @@
 function draw_background(c, canvas, dx, dy, img){
   canvas.fillRect(0, 0, c.width, c.height);
-  canvas.drawImage(img, dx, dy, 2 * (limit.x1 - limit.x0), 2 * (limit.y1 - limit.y0));
+  canvas.drawImage(img, dx, dy, (limit.x1 - limit.x0), (limit.y1 - limit.y0));
 }
 
 function draw_bullets(c, canvas, dx, dy, bullets){
@@ -199,97 +199,6 @@ function draw_light(canvas, x, y, r, rot){
     canvas.lineTo(x1, y1)
   }
   canvas.fill()
-}
-
-function draw_shadows(ctx, width, height, x, y, rot, cx, cy, asteroids){
-	var rotations = [];
-
-	//get all the angles for asteroids
-	for (var a = 0; a < asteroids.length; a++){
-		var dx = asteroids[a].x - x
-		var dy = asteroids[a].y - y
-
-		var r = asteroids[a].r
-
-		var d = Math.sqrt(dx * dx + dy * dy)
-		var l = Math.sqrt((d * d) - (r * r))
-		
-		var alpha = Math.asin(r / d)
-		var angle = Math.atan2(dy, dx)
-
-    	var l2 = 10000;
-
-    	var rot0 = {angle:(angle + alpha + 0.0001), l:l2}
-		var rot1 = {angle:(angle + alpha), l:l}
-		var rot2 = {angle:(angle - alpha), l:l}
-    	var rot3 = {angle:(angle - alpha - 0.0001), l:l2}
-
-    rotations.push(rot0)
-		rotations.push(rot1)
-		rotations.push(rot2)
-    rotations.push(rot3)
-	}
-
-	//get angles for border
-	var dx = -x
-	var dy = -y
-	var angle = Math.atan2(dy, dx)
-	var l = Math.sqrt(dx * dx + dy * dy)
-	var rot = {angle:angle, l:l}
-	rotations.push(rot)
-
-	var dx = width - x
-	var dy = -y
-	var angle = Math.atan2(dy, dx)
-	var l = Math.sqrt(dx * dx + dy * dy)
-	var rot = {angle:angle, l:l}
-	rotations.push(rot)
-
-	var dx = -x
-	var dy = height - y
-	var angle = Math.atan2(dy, dx)
-	var l = Math.sqrt(dx * dx + dy * dy)
-	var rot = {angle:angle, l:l}
-	rotations.push(rot)
-
-	var dx = width - x
-	var dy = height - y
-	var angle = Math.atan2(dy, dx)
-	var l = Math.sqrt(dx * dx + dy * dy)
-	var rot = {angle:angle, l:l}
-	rotations.push(rot)
-
-	sortArrayOfObjects = (arr, key) => {
-    	return arr.sort((a, b) => {
-        	return a[key] - b[key];
-    	});
-	};
-
-	sortArrayOfObjects(rotations, "angle");
-
-	rotations = rotations.sort()
-	ctx.fillStyle = "#FF0000";
-	ctx.globalAlpha = 0.5;
-
-	for (var a = 0; a < rotations.length; a++){
-    	ctx.beginPath()
-    	ctx.moveTo(x + cx, y + cy)
-    
-    	var a1 = a%(rotations.length)
-    	var a2 = (a+1)%(rotations.length)
-
-    	console.log(a1, a2)
-
-		var x1 = Math.cos(rotations[a1].angle) * rotations[a1].l + x
-		var y1 = Math.sin(rotations[a1].angle) * rotations[a1].l + y
-		ctx.lineTo(x1 + cx, y1 + cy)
-
-		var x1 = Math.cos(rotations[a2].angle) * rotations[a2].l + x
-    	var y1 = Math.sin(rotations[a2].angle) * rotations[a2].l + y
-    	ctx.lineTo(x1 + cx, y1 + cy)
-
-    	ctx.fill()
-	}
 }
 
 function display_player_rank(players){

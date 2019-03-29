@@ -24,8 +24,8 @@ background_image.src = "static/Background.png"
 
 socket.on('init_view', function(limits, x, y){
   limit = limits
-  init_view()
-  $(window).resize(function(){init_view()})
+  size_canvas()
+  $(window).resize(function(){size_canvas()})
   var dx = parseInt(c.width / 2) - x
   var dy = parseInt(c.height / 2) - y
   draw_background(bc, bctx, dx, dy, background_image)
@@ -34,7 +34,6 @@ socket.on('init_view', function(limits, x, y){
 socket.on('start_game', function(asteroid) {
   asteroids = asteroid
   init_inputs()
-  //$("#title_container")[0].style.display = "none"
   game_started = true
 })
 
@@ -50,7 +49,7 @@ socket.on('update', function(players, bullets) {
   update(players, bullets)
 })
 
-function init_view(){
+function size_canvas(){
   bc = $("#backCanvas")[0]
   bc.width = window.innerWidth
   bc.height = window.innerHeight
@@ -74,11 +73,7 @@ function update(players, bullets){
     ctx.clearRect(0, 0, c.width, c.height)
     sctx.clearRect(0, 0, c.width, c.height)
 
-    var player = players.filter(obj => {
-      return obj.id === socket.id
-    })
-
-    player = player[0]
+    var player = players.find(x => x.id === socket.id)
 
     var dx = parseInt(c.width / 2) - player.x
     var dy = parseInt(c.height / 2) - player.y
@@ -89,19 +84,16 @@ function update(players, bullets){
     draw_bullets(c, ctx, dx, dy, bullets)
     draw_asteroids(ctx, dx, dy, asteroids)
 
-    //draw_shadows(sctx, limit.x1, limit.y1, player.x, player.y, player.rot, dx, dy, asteroids)
-
     for (var i = 0; i < players.length; i++){
       var x = dx + players[i].x
       var y = dy + players[i].y
       if (x >= -border && x <= c.width + border && y >= -border && y <= c.width + border){
         draw(ctx, x, y, players[i].r, players[i].rot, players[i].color)
-        show_player_info(sctx, players[i], x, y)
         draw_shield(ctx, x, y, players[i].r, players[i].health/100)
         if (players[i].input_t !== 0){
           draw_thrust(ctx, x, y, players[i].r, players[i].rot)
         }
-        //draw_light(sctx, x, y, players[i].r, players[i].rot)
+        show_player_info(sctx, players[i], x, y)
       }
     }
 
