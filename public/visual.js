@@ -1,6 +1,6 @@
 function draw_background(c, canvas, dx, dy, img){
   canvas.fillRect(0, 0, c.width, c.height);
-  canvas.drawImage(img, dx, dy, (limit.x1 - limit.x0), (limit.y1 - limit.y0));
+  canvas.drawImage(img, dx, dy, 4 * img.width, 4 * img.height);
 }
 
 function draw_bullets(c, canvas, dx, dy, bullets){
@@ -85,7 +85,8 @@ function display_player_info(canvas, player, x, y){
 }
 
 function draw_borders(canvas, dx, dy){
-  canvas.lineWidth = 3
+  canvas.lineWidth = 2
+  canvas.strokeStyle = "grey";
   canvas.beginPath();
   canvas.moveTo(limit.x0 + dx, limit.y0 + dy);
   canvas.lineTo(limit.x1 + dx, limit.y0 + dy);

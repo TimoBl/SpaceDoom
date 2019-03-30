@@ -22,8 +22,7 @@ socket.on('disconnect', function() {
 var background_image = new Image()
 background_image.src = "static/Background.png"
 
-socket.on('init_view', function(limits, x, y){
-  limit = limits
+socket.on('init_view', function(x, y){
   size_canvas()
   $(window).resize(function(){size_canvas()})
   var dx = parseInt(c.width / 2) - x
@@ -31,7 +30,8 @@ socket.on('init_view', function(limits, x, y){
   draw_background(bc, bctx, dx, dy, background_image)
 })
 
-socket.on('start_game', function(asteroid) {
+socket.on('start_game', function(asteroid, limits) {
+  limit = limits
   asteroids = asteroid
   init_inputs()
   game_started = true
@@ -81,6 +81,8 @@ function update(players, bullets){
     border = 100
 
     draw_background(bc, bctx, dx, dy, background_image)
+    draw_borders(bctx, dx, dy)
+
     draw_bullets(c, ctx, dx, dy, bullets)
     draw_asteroids(ctx, dx, dy, asteroids)
 
