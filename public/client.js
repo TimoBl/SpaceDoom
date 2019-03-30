@@ -90,8 +90,8 @@ function update(players, bullets){
       if (x >= -border && x <= c.width + border && y >= -border && y <= c.width + border){
         draw(ctx, x, y, players[i].r, players[i].rot, players[i].color)
         draw_shield(ctx, x, y, players[i].r, players[i].health/100)
-        if (players[i].input_t !== 0){
-          draw_thrust(ctx, x, y, players[i].r, players[i].rot)
+        if (players[i].input_t > 0){
+          draw_thrust(ctx, x, y, players[i].r, players[i].rot, players[i].input_t)
         }
         show_player_info(sctx, players[i], x, y)
       }

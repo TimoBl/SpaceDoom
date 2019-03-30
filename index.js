@@ -117,8 +117,8 @@ var limit = {x0: 0, y0: 0, x1: 2560, y1: 1440}
 var bounciness = 0.5
 var shoot_freq = 20
 var shoot_force = 10
-var player_speed = 0.1
-var rotation_speed = 0.1
+var player_speed = 0.08
+var rotation_speed = 0.08
 
 var games = []
 
@@ -178,16 +178,16 @@ io.on('connection', function(socket){
     }
   })
 
-  socket.on('change_rotation_input', function(rot) {
+  socket.on('change_rotation_input', function(inp, inp_shift) {
     game = games.find(x => x.name === socket.game_name)
     player = game.players.find(x => x.id === socket.id)
-    player.input_r = rot
+    player.input_r = Math.sign(inp) * Math.min(Math.abs(inp_shift), 1)
   });
 
-  socket.on('change_thrust_input', function(inp) {
+  socket.on('change_thrust_input', function(inp, inp_shift) {
     game = games.find(x => x.name === socket.game_name)
     player = game.players.find(x => x.id === socket.id)
-    player.input_t = inp
+    player.input_t = Math.min(Math.abs(inp_shift), 1)
   });
 
   socket.on('shoot', function() {
@@ -255,8 +255,8 @@ function get_player_collisions(players, asteroids){
         p.x = ((a.r + p.r + 1) * dx / distance) + a.x
         p.y = ((a.r + p.r + 1) * dy / distance) + a.y
 
-        p.vx = -7 * p.vx / 10
-        p.vy = -7 * p.vy / 10
+        p.vx = -5 * p.vx / 10
+        p.vy = -5 * p.vy / 10
         return players
       }
     }
@@ -267,42 +267,47 @@ function get_player_collisions(players, asteroids){
 function get_bullet_collisions(bullets, players, asteroids){
   for (var i = bullets.length - 1; i >= 0; i--){
     //collision with players
-    for (var j = players.length - 1; j >= 0; j--){
-      var b = bullets[i]
-      var p = players[j]
+    if (bullets[i].state == "shot"){
 
-      if (p.id != b.id){
-      
-        var distance = Math.sqrt((p.x - b.x) * (p.x - b.x) + (p.y - b.y) * (p.y - b.y))
-        var radius = p.r + b.r
+      for (var j = players.length - 1; j >= 0; j--){
+        var b = bullets[i]
+        var p = players[j]
+
+        if (p.id != b.id){
+        
+          var distance = Math.sqrt((p.x - b.x) * (p.x - b.x) + (p.y - b.y) * (p.y - b.y))
+          var radius = p.r + b.r
+
+          if (distance < radius){
+            bullets[i].state = "exploded"
+            p.health -= 50
+            return [bullets, players]
+          }
+        }
+      }
+
+      //collision with asteroids
+      for (var j = asteroids.length - 1; j >= 0; j--){
+        var b = bullets[i]
+        var a = asteroids[j]
+        
+        var distance = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
+        var radius = a.r + b.r
 
         if (distance < radius){
-          bullets.splice(i, 1)
-          p.health -= 50
+          bullets[i].state = "exploded"
           return [bullets, players]
         }
       }
-    }
-
-    //collision with asteroids
-    for (var j = asteroids.length - 1; j >= 0; j--){
-      var b = bullets[i]
-      var a = asteroids[j]
-      
-      var distance = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
-      var radius = a.r + b.r
-
-      if (distance < radius){
-        bullets.splice(i, 1)
-        return [bullets, players]
-      }
+    } else {
+      if (bullets[i].r >= 10){bullets.splice(i, 1)}
     }
   }
   return [bullets, players]
 }
 
 function get_game_html(){
-  var text = '<img src="static/menu.png" onclick="location.reload()" style="position: absolute; cursor: pointer; width: 50px; height: 50px; top: 10px; right: 10px; z-index: 3;">'
+  var text = '<img src="static/menu.png" onclick="location.reload()" style="position: absolute; cursor: pointer; width: 50px; height: 50px; top: 20px; right: 20px; z-index: 3;">'
   return text
 }
 
@@ -346,7 +351,7 @@ function get_random_color(){
 function generate_map(limit, n){
   var asteroids = []
   for (var i = n; i > 0; i--){
-    var border = 20
+    var border = 50
     var x = parseInt(limit.x0 + border + (limit.x1 - limit.x0 - 2 * border) * Math.random())
     var y = parseInt(limit.y0 + border + (limit.y1 - limit.y0 - 2 * border) * Math.random())
     var r = 20 + parseInt(Math.random() * 30)

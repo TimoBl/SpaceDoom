@@ -4,12 +4,13 @@ function draw_background(c, canvas, dx, dy, img){
 }
 
 function draw_bullets(c, canvas, dx, dy, bullets){
-  canvas.globalAlpha = 1.0
+  //canvas.globalAlpha = 1.0
   canvas.fillStyle = "#00ffff"
   for (var i = 0; i < bullets.length; i++){
     var x = dx + bullets[i].x
     var y = dy + bullets[i].y
     if (x >= 0 && x <= c.width && y >= 0 && y <= c.width){
+      canvas.globalAlpha = 5 / bullets[i].r
       canvas.beginPath();
       canvas.arc(x, y, bullets[i].r, 0, 2 * Math.PI);
       canvas.lineWidth = 0;
@@ -150,7 +151,7 @@ function draw_mini_map(canvas, players, asteroids, x, y){
   }
 }
 
-function draw_thrust(canvas, x, y, r, rot){
+function draw_thrust(canvas, x, y, r, rot, input_t){
   var grad = canvas.createRadialGradient(x,y,0,x,y,1.5*r)
   
   grad.addColorStop(0.002, 'rgba(255, 0, 0, 1.000)');
@@ -159,7 +160,7 @@ function draw_thrust(canvas, x, y, r, rot){
 
   canvas.fillStyle = grad
   canvas.beginPath() 
-  var path = [[0, 1.5*r], [-r/4, r/2], [r/4, r/2]]
+  var path = [[0, 0.5*r*input_t + r], [-r/4, r/2], [r/4, r/2]]
   for (var i = 0; i < path.length; i++){
     var x1 = x + parseInt(Math.cos(rot + Math.PI / 2) * path[i][0] - Math.sin(rot + Math.PI / 2) * path[i][1])
     var y1 = y + parseInt(Math.sin(rot + Math.PI / 2) * path[i][0] + Math.cos(rot + Math.PI / 2) * path[i][1])
@@ -179,8 +180,10 @@ function show_player_info(canvas, player, x, y){
   canvas.lineTo(x + 2.5 * r, y - r);
   canvas.stroke();
 
+  ctx.globalAlpha = 1.0
   ctx.textAlign = 'right';
   ctx.font = "15px Arial";
+  ctx.fillStyle = player.color;
   ctx.fillText(player.name.toString(), x + 2.5 * r, y - r - 2);
 }
 
