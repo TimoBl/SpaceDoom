@@ -22,7 +22,6 @@ function draw_bullets(c, canvas, dx, dy, bullets){
 function draw_healths(c, canvas, dx, dy, healths){
   canvas.globalAlpha = 1.0
   canvas.fillStyle = "#00ffff"
-  console.log(healths.length)
   for (var i = 0; i < healths.length; i++){
     var x = dx + healths[i].x
     var y = dy + healths[i].y
