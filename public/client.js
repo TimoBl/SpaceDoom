@@ -7,6 +7,7 @@ var sctx;
 
 var limit;
 var asteroids;
+var healths;
 var game_started = false;
 var shift_inp = 1;
 
@@ -21,6 +22,8 @@ socket.on('disconnect', function() {
 
 var background_image = new Image()
 background_image.src = "static/Background.png"
+var health_image = new Image()
+health_image.src = "static/Health.png"
 
 socket.on('init_view', function(x, y){
   size_canvas()
@@ -30,11 +33,15 @@ socket.on('init_view', function(x, y){
   draw_background(bc, bctx, dx, dy, background_image)
 })
 
-socket.on('start_game', function(asteroid, limits) {
-  limit = limits
-  asteroids = asteroid
+socket.on('start_game', function() {
   init_inputs()
   game_started = true
+})
+
+socket.on('update_map', function(limits, asteroid, health){
+  limit = limits
+  asteroids = asteroid
+  healths = health
 })
 
 socket.on('change_html', function(text){
@@ -84,7 +91,9 @@ function update(players, bullets){
     draw_borders(bctx, dx, dy)
 
     draw_bullets(c, ctx, dx, dy, bullets)
+    draw_healths(c, ctx, dx, dy, healths)
     draw_asteroids(ctx, dx, dy, asteroids)
+
 
     for (var i = 0; i < players.length; i++){
       var x = dx + players[i].x
@@ -98,8 +107,6 @@ function update(players, bullets){
         show_player_info(sctx, players[i], x, y)
       }
     }
-
     draw_mini_map(sctx, players, asteroids, player.x, player.y)
   }
-  display_player_rank(players)
 }

@@ -89,7 +89,10 @@ function MultiGame(name){
   this.limit = {x0: 0, y0: 0, x1: 5120, y1: 2880}
   this.players = []
   this.bullets = []
-  this.asteroids = generate_map(this.limit, 40)
+  this.asteroids = []
+  this.healths = []
+  this.asteroids = generate_asteroids(this.asteroids, this.healths, this.limit, 40)
+  this.healths = generate_healths(this.asteroids, this.healths, this.limit, 10)
 }
 
 MultiGame.prototype.join = function (player, socket) {
@@ -98,13 +101,16 @@ MultiGame.prototype.join = function (player, socket) {
   socket.join(socket.game_name)
   socket.emit("change_html", get_game_html())
   socket.emit("start_game", this.asteroids, this.limit)
+  socket.emit("update_map", this.limit, this.asteroids, this.healths)
   socket.emit("update_stats", this.players)
 }
 
 MultiGame.prototype.update = function (){
   if (this.players.length > 0){
-    this.players = get_player_collisions(this.players, this.asteroids)
-    var items = get_bullet_collisions(this.bullets, this.players, this.asteroids)
+    var items = get_player_collisions(this.name, this.players, this.asteroids, this.healths, this.limit)
+    this.players = items[0]
+    this.healths = items[1]
+    var items = get_bullet_collisions(this.name, this.bullets, this.players, this.asteroids)
     this.bullets = items[0]
     this.players = items[1]
     for (var i = this.players.length - 1; i >= 0; i--){
@@ -126,7 +132,10 @@ function VersusGame(){
   this.limit = {x0: 1000, y0: 500, x1: 3000, y1: 2500}
   this.players = []
   this.bullets = []
-  this.asteroids = generate_map(this.limit, 10)
+  this.asteroids = []
+  this.healths = []
+  this.asteroids = generate_asteroids(this.asteroids, this.healths, this.limit, 10)
+  this.healths = generate_healths(this.asteroids, this.healths, this.limit, 3)
 }
 
 VersusGame.prototype.join = function (player, socket) {
@@ -139,6 +148,7 @@ VersusGame.prototype.join = function (player, socket) {
     player.color = "red"
     io.to(this.name).emit("change_html", get_game_html())
     io.to(this.name).emit("start_game", this.asteroids, this.limit)
+    io.to(this.name).emit("update_map", this.limit, this.asteroids, this.healths)
     io.to(this.name).emit("update_stats", this.players)
     waiting_versus_game = null
     games.push(this)
@@ -151,8 +161,10 @@ VersusGame.prototype.join = function (player, socket) {
 }
 
 VersusGame.prototype.update = function (){
-  this.players = get_player_collisions(this.players, this.asteroids)
-  var items = get_bullet_collisions(this.bullets, this.players, this.asteroids)
+  var items = get_player_collisions(this.name, this.players, this.asteroids, this.healths, this.limit)
+  this.players = items[0]
+  this.healths = items[1]
+  var items = get_bullet_collisions(this.name, this.bullets, this.players, this.asteroids)
   this.bullets = items[0]
   this.players = items[1]
   for (var i = this.players.length - 1; i >= 0; i--){
@@ -180,15 +192,19 @@ var waiting_versus_game = null
 
 var games = []
 
+app.use('/static', express.static(path.join(__dirname, 'public')))
+
 app.get('/', function(req, res){
-  res.sendFile(__dirname + '/start.html');
+  res.sendFile(__dirname + '/index.html');
+});
+
+app.get('/blog', function(req, res){
+  res.send('A list of blog posts should go here');
 });
 
 http.listen(port, function(){
   console.log('listening on: ' + port);
 });
-
-app.use('/static', express.static(path.join(__dirname, 'public')))
 
 io.on('connection', function(socket){
   console.log("New user connected")
@@ -265,6 +281,8 @@ io.on('connection', function(socket){
       game.players = game.players.filter(obj => {
         return obj.id !== socket.id
       })
+      game.players = sort_player_list(game.players)
+      io.to(game.name).emit("update_stats", game.players)
     }
     console.log("user disconnected")
   });
@@ -276,7 +294,7 @@ setInterval(() => {
   }
 }, 1000 / 60);
 
-function get_player_collisions(players, asteroids){
+function get_player_collisions(game_name, players, asteroids, healths, limit){
   for (var i = players.length - 1; i >= 0; i--){
 
     //collision to player
@@ -295,14 +313,14 @@ function get_player_collisions(players, asteroids){
           p2.vy = p1.vy
           p1.vx = nvx1
           p1.vy = nvy1
-          return players
+          return [players, healths]
         }
       }
     }
 
-    //collision to asteroids
     var p = players[i]
 
+    //collision to asteroids
     for (var j = asteroids.length - 1; j >= 0; j--){
       var a = asteroids[j]
 
@@ -318,14 +336,33 @@ function get_player_collisions(players, asteroids){
 
         p.vx = -5 * p.vx / 10
         p.vy = -5 * p.vy / 10
-        return players
+        return [players, healths]
+      }
+    }
+
+    //collision to healths
+    for (var j = healths.length - 1; j >= 0; j--){
+      var a = healths[j]
+
+      var dx = p.x - a.x
+      var dy = p.y - a.y 
+
+      var distance = parseInt(Math.sqrt(dx * dx + dy * dy))
+      var radius = p.r + a.r
+      
+      if (distance < radius){
+        p.health = 100
+        healths.splice(j, 1)
+        healths = generate_healths(asteroids, healths, limit, 1)
+        io.to(game_name).emit("update_map", limit, asteroids, healths)
+        return [players, healths]
       }
     }
   }
-  return players
+  return [players, healths]
 }
 
-function get_bullet_collisions(bullets, players, asteroids){
+function get_bullet_collisions(game_name, bullets, players, asteroids){
   for (var i = bullets.length - 1; i >= 0; i--){
     //collision with players
     if (bullets[i].state == "shot"){
@@ -340,8 +377,16 @@ function get_bullet_collisions(bullets, players, asteroids){
           var radius = p.r + b.r
 
           if (distance < radius){
-            bullets[i].state = "exploded"
-            p.health -= 50
+            b.state = "exploded"
+            p.health -= 25
+            if (p.health <= 0){
+              p.health = 100
+              p.killed += 1
+              p_killer = game.players.find(x => x.id === b.id)
+              p_killer.kills += 1
+              players = sort_player_list(players)
+              io.to(game_name).emit("update_stats", players)
+            }
             return [bullets, players]
           }
         }
@@ -368,7 +413,8 @@ function get_bullet_collisions(bullets, players, asteroids){
 }
 
 function get_game_html(){
-  var text = '<img src="static/menu.png" onclick="location.reload()" style="position: absolute; cursor: pointer; width: 50px; height: 50px; top: 20px; right: 20px; z-index: 3;">'
+  var text = '<img src="static/menu.png" onclick="location.reload()" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 3;">'
+  text += '<div id="player_list" style="position: absolute; top: 20px; right: 0px; width: 20%; z-index: 3;"></div>'
   return text
 }
 
@@ -409,17 +455,15 @@ function get_random_color(){
   return color
 }
 
-function generate_map(limit, n){
-  var asteroids = []
+function generate_asteroids(asteroids, healths, limit, n){
   for (var i = n; i > 0; i--){
     var border = 50
     var x = parseInt(limit.x0 + border + (limit.x1 - limit.x0 - 2 * border) * Math.random())
     var y = parseInt(limit.y0 + border + (limit.y1 - limit.y0 - 2 * border) * Math.random())
     var r = 20 + parseInt(Math.random() * 30)
-    var asteroid = {x:x, y:y, r:r}
+    var a = {x:x, y:y, r:r}
     var y = true
     for (var j = 0; j < asteroids.length; j++){
-      var a = asteroid
       var b = asteroids[j]
       var distance = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
       var radius = a.r + b.r
@@ -429,8 +473,18 @@ function generate_map(limit, n){
       } 
     }
 
+    for (var j = 0; j < healths.length; j++){
+      var b = healths[j]
+      var distance = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
+      var radius = a.r + b.r
+      if (distance < radius){
+        y = false
+        break
+      } 
+    }
+
     if (y == true){
-      asteroids.push(asteroid)
+      asteroids.push(a)
     } else {
       i -= 1
     }
@@ -438,4 +492,40 @@ function generate_map(limit, n){
   return asteroids
 }
 
+function generate_healths(asteroids, healths, limit, n){
+  for (var i = n; i > 0; i--){
+    var border = 10
+    var x = parseInt(limit.x0 + border + (limit.x1 - limit.x0 - 2 * border) * Math.random())
+    var y = parseInt(limit.y0 + border + (limit.y1 - limit.y0 - 2 * border) * Math.random())
+    var r = 40
+    var a = {x:x, y:y, r:r}
+    var y = true
+    for (var j = 0; j < asteroids.length; j++){
+      var b = asteroids[j]
+      var distance = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
+      var radius = a.r + b.r
+      if (distance < 2 * radius){
+        y = false
+        break
+      } 
+    }
+
+    for (var j = 0; j < healths.length; j++){
+      var b = healths[j]
+      var distance = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
+      var radius = a.r + b.r
+      if (distance < radius){
+        y = false
+        break
+      } 
+    }
+
+    if (y == true){
+      healths.push(a)
+    } else {
+      i -= 1
+    }
+  }
+  return healths
+}
     

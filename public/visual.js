@@ -4,7 +4,7 @@ function draw_background(c, canvas, dx, dy, img){
 }
 
 function draw_bullets(c, canvas, dx, dy, bullets){
-  //canvas.globalAlpha = 1.0
+  canvas.globalAlpha = 1.0
   canvas.fillStyle = "#00ffff"
   for (var i = 0; i < bullets.length; i++){
     var x = dx + bullets[i].x
@@ -15,6 +15,19 @@ function draw_bullets(c, canvas, dx, dy, bullets){
       canvas.arc(x, y, bullets[i].r, 0, 2 * Math.PI);
       canvas.lineWidth = 0;
       canvas.fill()
+    }
+  }
+}
+
+function draw_healths(c, canvas, dx, dy, healths){
+  canvas.globalAlpha = 1.0
+  canvas.fillStyle = "#00ffff"
+  console.log(healths.length)
+  for (var i = 0; i < healths.length; i++){
+    var x = dx + healths[i].x
+    var y = dy + healths[i].y
+    if (x >= 0 && x <= c.width && y >= 0 && y <= c.width){
+      ctx.drawImage(health_image, x, y, healths[i].r, healths[i].r)
     }
   }
 }
@@ -97,7 +110,8 @@ function draw_borders(canvas, dx, dy){
 }
 
 function draw_mini_map(canvas, players, asteroids, x, y){
-  var w = parseInt(limit.x1 / 50 + limit.y1 / 50)
+  var w = parseInt(window.innerHeight / 15 + window.innerWidth / 30)
+  
   border = 20
   canvas.globalAlpha = 1.0
   canvas.strokeStyle = "rgba(0, 175, 35, 0.6)"
@@ -206,9 +220,9 @@ function draw_light(canvas, x, y, r, rot){
 }
 
 function display_player_rank(players){
-  var text = "<table><tr><th>Player</th><th>Killed</th><th>Kills</th></tr>"
+  var text = "<table><tr><th>Player</th><th>Kills</th><th>Killed</th></tr>"
   for (var i = 0; i < players.length; i++){
-    text += "<tr style='color: " + players[i].color + "'><td>" + players[i].name + "</td><td>" + players[i].killed.toString() + "</td><td>" + players[i].kills.toString() + "</td><tr>"
+    text += "<tr style='color: " + players[i].color + "'><td>" + players[i].name + "</td><td>" + players[i].kills.toString() + "</td><td>" + players[i].killed.toString() + "</td><tr>"
   }
   text += "</table>"
   $("#player_list").html(text)
