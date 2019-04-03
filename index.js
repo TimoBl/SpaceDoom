@@ -413,7 +413,7 @@ function get_bullet_collisions(game_name, bullets, players, asteroids){
 }
 
 function get_game_html(){
-  var text = '<img src="static/menu.png" onclick="location.reload()" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 3;">'
+  var text = '<img src="static/images/menu.png" onclick="location.reload()" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 3;">'
   text += '<div id="player_list" style="position: absolute; top: 20px; right: 0px; width: 20%; z-index: 3;"></div>'
   return text
 }
@@ -460,8 +460,8 @@ function generate_asteroids(asteroids, healths, limit, n){
     var border = 50
     var x = parseInt(limit.x0 + border + (limit.x1 - limit.x0 - 2 * border) * Math.random())
     var y = parseInt(limit.y0 + border + (limit.y1 - limit.y0 - 2 * border) * Math.random())
-    var r = 20 + parseInt(Math.random() * 30)
-    var a = {x:x, y:y, r:r}
+    var r = 30 + parseInt(Math.random() * 50)
+    var a = {x:x, y:y, r:r, n: Math.round(Math.random())}
     var y = true
     for (var j = 0; j < asteroids.length; j++){
       var b = asteroids[j]

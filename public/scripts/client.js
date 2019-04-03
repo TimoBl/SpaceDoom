@@ -20,11 +20,6 @@ socket.on('disconnect', function() {
   $("body").html(text)
 });
 
-var background_image = new Image()
-background_image.src = "static/Background.png"
-var health_image = new Image()
-health_image.src = "static/health.png"
-
 socket.on('init_view', function(x, y){
   size_canvas()
   $(window).resize(function(){size_canvas()})

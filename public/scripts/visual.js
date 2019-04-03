@@ -1,3 +1,13 @@
+var background_image = new Image()
+background_image.src = "static/images/background.png"
+var health_image = new Image()
+health_image.src = "static/images/health.png"
+var asteroid_image_1 = new Image()
+asteroid_image_1.src = "static/images/asteroid1.png"
+var asteroid_image_2 = new Image()
+asteroid_image_2.src = "static/images/asteroid2.png"
+var asteroid_images = [asteroid_image_1, asteroid_image_2]
+
 function draw_background(c, canvas, dx, dy, img){
   canvas.fillRect(0, 0, c.width, c.height);
   canvas.drawImage(img, dx, dy, 4 * img.width, 4 * img.height);
@@ -67,13 +77,12 @@ function draw_asteroids(canvas, dx, dy, asteroids){
   canvas.strokeStyle = "#4f2600"
 
   for (var i = 0; i < asteroids.length; i++){
-    canvas.beginPath();
-    canvas.arc(dx + asteroids[i].x, dy + asteroids[i].y, asteroids[i].r, 0, 2 * Math.PI);
-    canvas.fill()
-
-    canvas.beginPath();
-    canvas.arc(dx + asteroids[i].x, dy + asteroids[i].y, asteroids[i].ir, 0, 2 * Math.PI);
-    canvas.stroke()
+    //canvas.beginPath();
+    //canvas.arc(dx + asteroids[i].x, dy + asteroids[i].y, asteroids[i].r, 0, 2 * Math.PI);
+    //canvas.fill()
+    var r = asteroids[i].r
+    var n = asteroids[i].n
+    canvas.drawImage(asteroid_images[n], dx + asteroids[i].x - r, dy + asteroids[i].y - r, 2*r, 2*r)
   }
 }
 
