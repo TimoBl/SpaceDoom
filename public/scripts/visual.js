@@ -8,9 +8,12 @@ var asteroid_image_2 = new Image()
 asteroid_image_2.src = "static/images/asteroid2.png"
 var asteroid_images = [asteroid_image_1, asteroid_image_2]
 
+var player_image = new Image()
+player_image.src = "static/images/ship.png"
+
 function draw_background(c, canvas, dx, dy, img){
   canvas.fillRect(0, 0, c.width, c.height);
-  canvas.drawImage(img, dx, dy, 4 * img.width, 4 * img.height);
+  canvas.drawImage(img, dx, dy, 6 * img.width, 6 * img.height);
 }
 
 function draw_bullets(c, canvas, dx, dy, bullets){
@@ -39,6 +42,14 @@ function draw_healths(c, canvas, dx, dy, healths){
       ctx.drawImage(health_image, x, y, healths[i].r, healths[i].r)
     }
   }
+}
+
+function draw_player(c, context, x, y, r, rot, color){
+  context.save()
+  context.translate(x, y)
+  context.rotate(rot)
+  context.drawImage(player_image, - r + 10, - r + 10, (2 * r) - 20, (2 * r) - 20)
+  context.restore()
 }
 
 function draw (canvas, x, y, r, rot, color){

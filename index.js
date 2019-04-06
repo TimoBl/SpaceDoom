@@ -86,7 +86,7 @@ Bullet.prototype.move = function (index){
 
 function MultiGame(name){
   this.name = name
-  this.limit = {x0: 0, y0: 0, x1: 5120, y1: 2880}
+  this.limit = {x0: 0, y0: 0, x1: 7680, y1: 4320}
   this.players = []
   this.bullets = []
   this.asteroids = []
@@ -273,6 +273,7 @@ io.on('connection', function(socket){
     if (player.shoot_countdown == 0){
       game.bullets.push(player.shoot())
     }
+    io.to(game.name).emit("play_shoot_sound")
   });
 
   socket.on('disconnect', function() {
@@ -379,6 +380,7 @@ function get_bullet_collisions(game_name, bullets, players, asteroids){
           if (distance < radius){
             b.state = "exploded"
             p.health -= 25
+            io.to(game_name).emit("play_explosion_sound")
             if (p.health <= 0){
               p.health = 100
               p.killed += 1
@@ -413,8 +415,8 @@ function get_bullet_collisions(game_name, bullets, players, asteroids){
 }
 
 function get_game_html(){
-  var text = '<img src="static/images/menu.png" onclick="location.reload()" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 3;">'
-  text += '<div id="player_list" style="position: absolute; top: 20px; right: 0px; width: 20%; z-index: 3;"></div>'
+  var text = '<img src="static/images/menu.png" onclick="window.location.href = window.location.href" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 3;">'
+  text += '<div id="player_list" style="position: absolute; top: 60px; right: 0px; width: 20%; z-index: 3;"></div>'
   return text
 }
 

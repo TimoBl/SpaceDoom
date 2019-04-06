@@ -30,6 +30,7 @@ socket.on('init_view', function(x, y){
 
 socket.on('start_game', function() {
   init_inputs()
+  init_sounds()
   game_started = true
 })
 
@@ -94,7 +95,7 @@ function update(players, bullets){
       var x = dx + players[i].x
       var y = dy + players[i].y
       if (x >= -border && x <= c.width + border && y >= -border && y <= c.width + border){
-        draw(ctx, x, y, players[i].r, players[i].rot, players[i].color)
+        draw_player(c, ctx, x, y, players[i].r, players[i].rot, players[i].color)
         draw_shield(ctx, x, y, players[i].r, players[i].health/100)
         if (players[i].input_t > 0){
           draw_thrust(ctx, x, y, players[i].r, players[i].rot, players[i].input_t)
