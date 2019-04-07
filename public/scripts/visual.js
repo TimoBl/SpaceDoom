@@ -1,15 +1,34 @@
+var asteroid_images
+var player_images
+var health_image
 var background_image = new Image()
 background_image.src = "static/images/background.png"
-var health_image = new Image()
-health_image.src = "static/images/health.png"
-var asteroid_image_1 = new Image()
-asteroid_image_1.src = "static/images/asteroid1.png"
-var asteroid_image_2 = new Image()
-asteroid_image_2.src = "static/images/asteroid2.png"
-var asteroid_images = [asteroid_image_1, asteroid_image_2]
 
-var player_image = new Image()
-player_image.src = "static/images/ship.png"
+function load_image_assets(){
+  health_image = new Image()
+  health_image.src = "static/images/health.png"
+  var asteroid_image_1 = new Image()
+  asteroid_image_1.src = "static/images/asteroid1.png"
+  var asteroid_image_2 = new Image()
+  asteroid_image_2.src = "static/images/asteroid2.png"
+  
+  asteroid_images = [asteroid_image_1, asteroid_image_2]
+
+
+  var player_image1 = new Image()
+  player_image1.src = "static/images/BlueShip.png"
+
+  var player_image2 = new Image()
+  player_image2.src = "static/images/OrangeShip.png"
+
+  var player_image3 = new Image()
+  player_image3.src = "static/images/RedShip.png"
+
+  var player_image4 = new Image()
+  player_image4.src = "static/images/GreenShip.png"
+
+  player_images = [player_image1, player_image2, player_image3, player_image4]
+}
 
 function draw_background(c, canvas, dx, dy, img){
   canvas.fillRect(0, 0, c.width, c.height);
@@ -18,7 +37,7 @@ function draw_background(c, canvas, dx, dy, img){
 
 function draw_bullets(c, canvas, dx, dy, bullets){
   canvas.globalAlpha = 1.0
-  canvas.fillStyle = "#00ffff"
+  canvas.fillStyle = "#f24324"
   for (var i = 0; i < bullets.length; i++){
     var x = dx + bullets[i].x
     var y = dy + bullets[i].y
@@ -44,11 +63,12 @@ function draw_healths(c, canvas, dx, dy, healths){
   }
 }
 
-function draw_player(c, context, x, y, r, rot, color){
+function draw_player(context, x, y, r, rot, index){
+  context.globalAlpha = 1.0
   context.save()
   context.translate(x, y)
   context.rotate(rot)
-  context.drawImage(player_image, - r + 10, - r + 10, (2 * r) - 20, (2 * r) - 20)
+  context.drawImage(player_images[index], - r + 5, - r + 5, (2 * r) - 10, (2 * r) - 10)
   context.restore()
 }
 
@@ -88,32 +108,10 @@ function draw_asteroids(canvas, dx, dy, asteroids){
   canvas.strokeStyle = "#4f2600"
 
   for (var i = 0; i < asteroids.length; i++){
-    //canvas.beginPath();
-    //canvas.arc(dx + asteroids[i].x, dy + asteroids[i].y, asteroids[i].r, 0, 2 * Math.PI);
-    //canvas.fill()
     var r = asteroids[i].r
-    var n = asteroids[i].n
+    var n = asteroids[i].asset_index
     canvas.drawImage(asteroid_images[n], dx + asteroids[i].x - r, dy + asteroids[i].y - r, 2*r, 2*r)
   }
-}
-
-function display_player_info(canvas, player, x, y){
-  //name
-  canvas.globalAlpha = 0.8
-  canvas.textAlign = "center"; 
-  canvas.font = "16px Arial";
-  canvas.fillText(player.name, x - player.r, y - player.r);
-
-  //kills
-  canvas.fillText(player.kills.toString(), x + player.r, y + player.r);
-
-  //killed
-  canvas.fillText(player.killed.toString(), x - player.r, y + player.r);
-
-  //health
-  canvas.lineWidth = 1;
-  canvas.fillRect(x + 0.5 * player.r, y - 5 * player.r / 4, player.health * player.r / 100, player.r / 4);
-  canvas.strokeRect(x + 0.5 * player.r, y - 5 * player.r / 4, player.r, player.r / 4);
 }
 
 function draw_borders(canvas, dx, dy){
@@ -128,7 +126,7 @@ function draw_borders(canvas, dx, dy){
   canvas.stroke();
 }
 
-function draw_mini_map(canvas, players, asteroids, x, y){
+function draw_mini_map(canvas, players, meta_players, asteroids, x, y){
   var w = parseInt(window.innerHeight / 15 + window.innerWidth / 30)
   
   border = 20
@@ -163,9 +161,9 @@ function draw_mini_map(canvas, players, asteroids, x, y){
       y1 = ny1
     }
 
-    canvas.fillStyle = players[i].color
+    canvas.fillStyle = meta_players[i].color
     canvas.beginPath();
-    canvas.arc(x1 + w + border, y1 + w + border, players[i].r / 10, 0, 2 * Math.PI);
+    canvas.arc(x1 + w + border, y1 + w + border, meta_players[i].r / 10, 0, 2 * Math.PI);
     canvas.fill();
   }
 
@@ -203,8 +201,8 @@ function draw_thrust(canvas, x, y, r, rot, input_t){
   canvas.fill()
 }
 
-function show_player_info(canvas, player, x, y){
-  r = player.r
+function show_player_info(canvas, meta, x, y){
+  r = meta.r
 
   canvas.strokeStyle = "grey";
   canvas.lineWidth = 2;
@@ -214,11 +212,11 @@ function show_player_info(canvas, player, x, y){
   canvas.lineTo(x + 2.5 * r, y - r);
   canvas.stroke();
 
-  ctx.globalAlpha = 1.0
-  ctx.textAlign = 'right';
-  ctx.font = "15px Arial";
-  ctx.fillStyle = player.color;
-  ctx.fillText(player.name.toString(), x + 2.5 * r, y - r - 2);
+  canvas.globalAlpha = 1.0
+  canvas.textAlign = 'right'
+  canvas.font = "15px Arial"
+  canvas.fillStyle = meta.color
+  canvas.fillText(meta.name, x + 2.5 * r, y - r - 2);
 }
 
 function draw_light(canvas, x, y, r, rot){

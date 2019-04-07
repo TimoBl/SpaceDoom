@@ -8,6 +8,7 @@ var sctx;
 var limit;
 var asteroids;
 var healths;
+var meta_players;
 var game_started = false;
 var shift_inp = 1;
 
@@ -29,27 +30,26 @@ socket.on('init_view', function(x, y){
 })
 
 socket.on('start_game', function() {
+  load_image_assets()
   init_inputs()
   init_sounds()
   game_started = true
-})
-
-socket.on('update_map', function(limits, asteroid, health){
-  limit = limits
-  asteroids = asteroid
-  healths = health
 })
 
 socket.on('change_html', function(text){
   $("#html_content").html(text)
 })
 
-socket.on('update_stats', function(players){
-  display_player_rank(players)
-})
-
 socket.on('update', function(players, bullets) {
   update(players, bullets)
+})
+
+socket.on('meta_update', function(limits, asteroid, health, players){
+  limit = limits
+  asteroids = asteroid
+  healths = health
+  meta_players = players
+  display_player_rank(meta_players)
 })
 
 function size_canvas(){
@@ -95,14 +95,14 @@ function update(players, bullets){
       var x = dx + players[i].x
       var y = dy + players[i].y
       if (x >= -border && x <= c.width + border && y >= -border && y <= c.width + border){
-        draw_player(c, ctx, x, y, players[i].r, players[i].rot, players[i].color)
-        draw_shield(ctx, x, y, players[i].r, players[i].health/100)
+        draw_player(ctx, x, y, meta_players[i].r, players[i].rot, meta_players[i].asset_index)
+        draw_shield(ctx, x, y, meta_players[i].r, players[i].health/100)
         if (players[i].input_t > 0){
-          draw_thrust(ctx, x, y, players[i].r, players[i].rot, players[i].input_t)
+          draw_thrust(ctx, x, y, meta_players[i].r, players[i].rot, players[i].input_t)
         }
-        show_player_info(sctx, players[i], x, y)
+        show_player_info(sctx, meta_players[i], x, y)
       }
     }
-    draw_mini_map(sctx, players, asteroids, player.x, player.y)
+    draw_mini_map(sctx, players, meta_players, asteroids, player.x, player.y)
   }
 }
