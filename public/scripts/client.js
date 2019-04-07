@@ -27,10 +27,10 @@ socket.on('init_view', function(x, y){
   var dx = parseInt(c.width / 2) - x
   var dy = parseInt(c.height / 2) - y
   draw_background(bc, bctx, dx, dy, background_image)
+  load_image_assets()
 })
 
 socket.on('start_game', function() {
-  load_image_assets()
   init_inputs()
   init_sounds()
   game_started = true
