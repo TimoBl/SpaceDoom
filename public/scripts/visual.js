@@ -184,6 +184,7 @@ function draw_mini_map(canvas, players, meta_players, asteroids, x, y){
 }
 
 function draw_thrust(canvas, x, y, r, rot, input_t){
+  canvas.globalAlpha = 1.0
   var grad = canvas.createRadialGradient(x,y,0,x,y,1.5*r)
   
   grad.addColorStop(0.002, 'rgba(255, 0, 0, 1.000)');

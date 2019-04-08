@@ -66,7 +66,7 @@ th {
   text-align: center;
 }
 
-#name_input {
+#input_field {
   padding: 10px;
   float: left;
   width: 40%;
@@ -74,6 +74,11 @@ th {
   margin-right: 30%;
   margin-bottom: 20px;
   margin-top: 20px;
+}
+
+#name_input {
+  width: 60%;
+  padding: 5px;
 }
 
 #game_container {

@@ -12,9 +12,17 @@ var meta_players;
 var game_started = false;
 var shift_inp = 1;
 
+var dx
+var dy
+
 var socket = io();
 
 var game_name;
+
+$(window).resize(function(){
+  size_canvas()
+  draw_background(bc, bctx, dx, dy, background_image)
+})
 
 socket.on('disconnect', function() {
   var text = "Reload page..."
@@ -23,9 +31,8 @@ socket.on('disconnect', function() {
 
 socket.on('init_view', function(x, y){
   size_canvas()
-  $(window).resize(function(){size_canvas()})
-  var dx = parseInt(c.width / 2) - x
-  var dy = parseInt(c.height / 2) - y
+  dx = parseInt(c.width / 2) - x
+  dy = parseInt(c.height / 2) - y
   draw_background(bc, bctx, dx, dy, background_image)
   load_image_assets()
 })
