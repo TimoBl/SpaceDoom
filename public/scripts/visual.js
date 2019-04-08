@@ -115,9 +115,10 @@ function draw_asteroids(canvas, dx, dy, asteroids){
 }
 
 function draw_borders(canvas, dx, dy){
-  canvas.lineWidth = 2
+  canvas.lineWidth = 3
   canvas.strokeStyle = "grey";
   canvas.beginPath();
+  canvas.setLineDash([60, 60]);
   canvas.moveTo(limit.x0 + dx, limit.y0 + dy);
   canvas.lineTo(limit.x1 + dx, limit.y0 + dy);
   canvas.lineTo(limit.x1 + dx, limit.y1 + dy);
@@ -240,7 +241,7 @@ function draw_light(canvas, x, y, r, rot){
 function display_player_rank(players){
   var text = "<table><tr><th>Player</th><th>Kills</th><th>Killed</th></tr>"
   for (var i = 0; i < players.length; i++){
-    text += "<tr style='color: " + players[i].color + "'><td>" + players[i].name + "</td><td>" + players[i].kills.toString() + "</td><td>" + players[i].killed.toString() + "</td><tr>"
+    text += "<tr><td style='color: " + players[i].color + "'>" + players[i].name + "</td><td>" + players[i].kills.toString() + "</td><td>" + players[i].killed.toString() + "</td><tr>"
   }
   text += "</table>"
   $("#player_list").html(text)

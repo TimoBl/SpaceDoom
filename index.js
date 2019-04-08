@@ -150,7 +150,7 @@ MultiGame.prototype.meta_update = function (){
 function VersusGame(){
   this.type = "Versus"
   this.name = "Versus" + String(parseInt(Math.random() * 1000))
-  this.limit = {x0: 1000, y0: 500, x1: 3000, y1: 2500}
+  this.limit = {x0: 1920, y0: 1080, x1: 5760, y1: 3240}
   this.players = []
   this.meta_players = []
   this.bullets = []
@@ -166,9 +166,9 @@ VersusGame.prototype.join = function (player, meta_player, socket) {
   socket.game_name = this.name
   socket.join(socket.game_name)
   if (this.players.length == 2){
-    player.x = 1850
-    player.y = 600
-    meta_player.color = "red"
+    player.x = 2000
+    player.y = 1160
+    meta_player.color = "#d11b1b"
     meta_player.asset_index = 2
     io.to(this.name).emit("change_html", get_game_html())
     this.meta_update()
@@ -176,11 +176,11 @@ VersusGame.prototype.join = function (player, meta_player, socket) {
     waiting_versus_game = null
     games.push(this)
   } else {
-    player.x = 700
-    player.y = 600
-    meta_player.color = "blue"
+    player.x = 5680
+    player.y = 3160
+    meta_player.color = "#0e21ef"
     meta_player.asset_index = 0
-    socket.emit("change_html", "<div id='title_container'><div id='title_vertical_container'><center><h1>Waiting for player...</h1></center></div></div>")
+    socket.emit("change_html", "<div id='title_container'><div id='title_vertical_container'><center><h1 style='color: white'>Waiting for opponent...</h1></center></div></div>")
   }
 }
 
@@ -532,7 +532,7 @@ function get_random_color(){
 
 function generate_asteroids(asteroids, healths, limit, n){
   for (var i = n; i > 0; i--){
-    var border = 50
+    var border = 80
     var x = parseInt(limit.x0 + border + (limit.x1 - limit.x0 - 2 * border) * Math.random())
     var y = parseInt(limit.y0 + border + (limit.y1 - limit.y0 - 2 * border) * Math.random())
     var r = 30 + parseInt(Math.random() * 50)
@@ -569,7 +569,7 @@ function generate_asteroids(asteroids, healths, limit, n){
 
 function generate_healths(asteroids, healths, limit, n){
   for (var i = n; i > 0; i--){
-    var border = 10
+    var border = 40
     var x = parseInt(limit.x0 + border + (limit.x1 - limit.x0 - 2 * border) * Math.random())
     var y = parseInt(limit.y0 + border + (limit.y1 - limit.y0 - 2 * border) * Math.random())
     var r = 40
