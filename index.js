@@ -20,20 +20,20 @@ function Player(id) {
 
 function MetaPlayer(id) {
 	this.id = id,
-		this.name = "",
-		this.r = 50,
-		this.kills = 0,
-		this.killed = 0,
-		this.asset_index = Math.round(Math.random() * 3),
-		this.color = get_random_color(),
-		this.input_r = 0,
-		this.shoot_force = 20,
-		this.speed = 0.1,
-		this.rotation_speed = 0.08,
-		this.max_speed = 8,
-		this.shoot_countdown = 0,
-		this.reload_time = 20,
-		this.state = "menu" // menu spawning ingame pause
+	this.name = "",
+	this.r = 50,
+	this.kills = 0,
+	this.killed = 0,
+	this.asset_index = Math.round(Math.random() * 3),
+	this.color = get_random_color(),
+	this.input_r = 0,
+	this.shoot_force = 20,
+	this.speed = 0.1,
+	this.rotation_speed = 0.08,
+	this.max_speed = 8,
+	this.shoot_countdown = 0,
+	this.reload_time = 15,
+	this.state = "menu"
 }
 
 Player.prototype.shoot = function(meta) {
@@ -128,15 +128,21 @@ function Bullet(id, x, y, vx, vy) {
 }
 
 Bullet.prototype.move = function(zone) {
-	if (this.state == "shot") {
-		this.x += this.vx
-		this.y += this.vy
-	} else if (this.state == "exploded") {
+	this.x += this.vx
+	this.y += this.vy
+		
+	if (this.state === "exploded") {
 		this.r += 0.5
+	} else if (this.state === "exploded_player"){
+		this.r += (5 / Math.sqrt(this.r))
 	}
 
 
-	if (this.r > 10 || this.x - this.r < zone.x0 || this.y - this.r < zone.y0 || this.x + this.r > zone.x1 || this.y + this.r > zone.y1){
+	if (this.x - this.r < zone.x0 || this.y - this.r < zone.y0 || this.x + this.r > zone.x1 || this.y + this.r > zone.y1){
+		return true
+	} else if (this.r > 10 && this.state === "exploded"){
+		return true
+	} else if (this.r > 60 && this.state === "exploded_player"){
 		return true
 	} else {
 		return false
@@ -153,9 +159,9 @@ function MultiGame(name) {
 		y1: 4320
 	}
 	this.zone = {
-		x0: 1000,
-		y0: 1000,
-		x1: 6680,
+		x0: 0,
+		y0: 0,
+		x1: 7680,
 		y1: 3320
 	}
 	this.players = []
@@ -168,14 +174,21 @@ function MultiGame(name) {
 }
 
 MultiGame.prototype.join = function(player, meta_player, socket) {
-	player.x = 500
+	player.x = 100 + parseInt(Math.random() * 7580)
 	player.y = 4200
+	player.vx = 0
+	player.vy = 0
+	player.input_r = 0
+	player.input_t = 0
+	player.rot = -Math.PI / 2,
 	meta_player.state = "spawning"
 	this.players.push(player)
 	this.meta_players.push(meta_player)
 	socket.game_name = this.name
+	socket.player = player
+	socket.meta_player = meta_player
 	socket.join(socket.game_name)
-	socket.emit("change_html", get_game_html())
+	socket.emit("change_html", get_multi_game_page())
 	this.meta_update()
 	socket.emit("start_game")
 }
@@ -191,13 +204,118 @@ MultiGame.prototype.update = function() {
 		this.bullets = items[0]
 		this.players = items[1]
 		if (typeof items[2] === "number"){
-			var player = this.players[items[2]]
-			var meta_player = this.meta_players[items[2]]
-			this.players.splice(items[2], 1)
-			this.meta_players.splice(items[2], 1)
-			this.meta_update()
-			var text = "<div id='title_container'><div id='title_vertical_container'><center><h1 class='style'>You're dead!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Join</button></center></div></div>"
-			io.to(player.id).emit("change_html", text);
+			this.leave(items[2], items[3])
+		}
+
+		for (var i = this.players.length - 1; i >= 0; i--) {
+			var items = this.players[i].move(this.limit, this.zone, this.meta_players[i])
+			this.meta_players[i] = items[0]
+			if (items[1] === true){this.meta_update()}
+		}
+		for (var i = this.bullets.length - 1; i >= 0; i--) {
+			var b = this.bullets[i]
+			if (b.move(this.zone) == true){
+				this.bullets.splice(i, 1)
+			}
+
+		}
+		io.to(this.name).emit('update', this.players, this.bullets)
+	}
+}
+
+MultiGame.prototype.leave = function(index1, index2){
+	var player = this.players[index1]
+	var meta_player = this.meta_players[index1]
+	meta_player.killed += 1
+	this.meta_players[index2.kills] += 1
+	io.to(player.id).emit("save_player", player, meta_player)
+	this.players.splice(index1, 1)
+	this.meta_players.splice(index1, 1)
+	this.meta_update()
+	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1 class='style'>You're dead!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Join</button></center></div></div>"
+	io.to(player.id).emit("change_html", text)
+}
+
+MultiGame.prototype.meta_update = function() {
+	var p = sort_player_list(this.players, this.meta_players)
+	this.players = p[0]
+	this.meta_players = p[1]
+	io.to(this.name).emit("meta_update", this.limit, this.zone, this.asteroids, this.healths, this.meta_players)
+	console.log("meta_update")
+}
+
+
+function VersusGame(name) {
+	this.type = "Versus"
+	this.name = name
+	this.limit = {
+		x0: 0,
+		y0: 0,
+		x1: 7680,
+		y1: 4320
+	}
+	this.zone = {
+		x0: 500,
+		y0: 0,
+		x1: 7180,
+		y1: 4320
+	}
+	this.blue_player_count = 0
+	this.red_player_count = 0
+	this.blue_kills = 0
+	this.red_kills = 0
+	this.players = []
+	this.meta_players = []
+	this.bullets = []
+	this.asteroids = []
+	this.healths = []
+	this.asteroids = generate_asteroids(this.asteroids, this.healths, this.zone, 40)
+	this.healths = generate_healths(this.asteroids, this.healths, this.zone, 10)
+}
+
+VersusGame.prototype.join = function(player, meta_player, socket) {
+	if (this.blue_player_count > this.red_player_count){
+		meta_player.color = "red"
+		this.red_player_count += 1
+		player.x = 250
+		player.y = 100 + parseInt(Math.random() * 4320)
+		meta_player.asset_index = 2
+	} else {
+		meta_player.color = "blue"
+		this.blue_player_count += 1
+		player.x = 7430
+		player.y = 100 + parseInt(Math.random() * 4320)
+		meta_player.asset_index = 0
+	}
+	player.vx = 0
+	player.vy = 0
+	player.input_r = 0
+	player.input_t = 0
+	player.rot = -Math.PI / 2,
+	meta_player.state = "spawning"
+	this.players.push(player)
+	this.meta_players.push(meta_player)
+	socket.game_name = this.name
+	socket.player = player
+	socket.meta_player = meta_player
+	socket.join(socket.game_name)
+	socket.emit("change_html", get_versus_game_page())
+	this.meta_update()
+	socket.emit("start_game")
+}
+
+VersusGame.prototype.update = function() {
+	if (this.players.length > 0) {
+		var items = get_player_collisions(this.players, this.meta_players, this.asteroids, this.healths, this.zone)
+		this.players = items[0]
+		this.healths = items[1]
+		if (items[2] == true){this.meta_update()}
+
+		var items = get_bullet_collisions(this.bullets, this.players, this.meta_players, this.asteroids)
+		this.bullets = items[0]
+		this.players = items[1]
+		if (typeof items[2] === "number"){
+			this.leave(items[2], items[3])
 		}
 
 		for (var i = this.players.length - 1; i >= 0; i--) {
@@ -216,18 +334,32 @@ MultiGame.prototype.update = function() {
 	}
 }
 
-MultiGame.prototype.meta_update = function() {
+VersusGame.prototype.leave = function(index1, index2){
+	var player = this.players[index1]
+	var meta_player = this.meta_players[index1]
+	meta_player.killed += 1
+	this.meta_players[index2].kills += 1
+	io.to(player.id).emit("save_player", player, meta_player)
+	this.players.splice(index1, 1)
+	this.meta_players.splice(index1, 1)
+	if (meta_player.color == "red"){this.blue_kills += 1; this.blue_player_count -= 1}
+	else if (meta_player.color == "blue"){this.red_kills += 1}
+	this.meta_update()
+	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1 class='style'>You're dead!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Join</button></center></div></div>"
+	io.to(player.id).emit("change_html", text)
+}
+
+VersusGame.prototype.meta_update = function() {
 	var p = sort_player_list(this.players, this.meta_players)
 	this.players = p[0]
 	this.meta_players = p[1]
 	io.to(this.name).emit("meta_update", this.limit, this.zone, this.asteroids, this.healths, this.meta_players)
+	io.to(this.name).emit("change_game_score", this.blue_kills, this.red_kills)
 }
 
 
 //game variables
 var bounciness = 0.5
-
-var waiting_versus_game = null
 
 var games = []
 
@@ -244,13 +376,10 @@ http.listen(port, function() {
 io.on('connection', function(socket) {
 	console.log("New user connected")
 
-	var player;
-	var meta_player;
-
 	socket.on('init', function() {
-		player = new Player(socket.id)
-		meta_player = new MetaPlayer(socket.id)
-		socket.emit('init_view', player.x, player.y)
+		socket.player = new Player(socket.id)
+		socket.meta_player = new MetaPlayer(socket.id)
+		socket.emit('init_view', socket.player.x, socket.player.y)
 	})
 
 	socket.on('init_multi_game', function() {
@@ -261,13 +390,31 @@ io.on('connection', function(socket) {
 		socket.emit("change_html", get_versus_page())
 	})
 
-	socket.on('join_versus_game', function(name) {
-		if (name.length > 0 && name.length <= 8) {
-			meta_player.name = String(name)
-			if (waiting_versus_game == null) {
-				waiting_versus_game = new VersusGame()
-			}
-			waiting_versus_game.join(player, meta_player, socket)
+	socket.on('create_versus_game', function(game_name, name) {
+		if (game_name.length > 0 && game_name.length <= 8 && name.length > 0 && name.length <= 8) {
+			socket.meta_player.name = String(name)
+
+			game = new VersusGame(game_name)
+			games.push(game)
+			game.join(socket.player, socket.meta_player, socket)
+
+		} else if ((game_name.length == 0 || game_name.length > 8) && (name.length == 0 || name.length > 8)) {
+			socket.emit("error_message", "Invalid names: 1-8 charachters!")
+		} else if (game_name.length == 0 || game_name.length > 8) {
+			socket.emit("error_message", "Invalid game name: 1-8 charachters!")
+		} else if (name.length == 0 || name.length > 8) {
+			socket.emit("error_message", "Invalid name: 1-8 charachters!")
+		}
+	})
+
+	socket.on('join_versus_game', function(game_name, name) {
+		game = games.find(x => x.name === game_name)
+		if (name.length > 0 && name.length <= 8 && game.players.length <= 6) {
+			socket.game_name = String(game_name)
+			socket.meta_player.name = String(name)
+			game.join(socket.player, socket.meta_player, socket)
+		} else if (game.players.length > 6) {
+			socket.emit("error_message", "Game is full!")
 		} else {
 			socket.emit("error_message", "Invalid name: 1-8 charachters!")
 		}
@@ -275,11 +422,11 @@ io.on('connection', function(socket) {
 
 	socket.on('create_multi_game', function(game_name, name) {
 		if (game_name.length > 0 && game_name.length <= 8 && name.length > 0 && name.length <= 8) {
-			meta_player.name = String(name)
+			socket.meta_player.name = String(name)
 
 			game = new MultiGame(game_name)
 			games.push(game)
-			game.join(player, meta_player, socket)
+			game.join(socket.player, socket.meta_player, socket)
 
 		} else if ((game_name.length == 0 || game_name.length > 8) && (name.length == 0 || name.length > 8)) {
 			socket.emit("error_message", "Invalid names: 1-8 charachters!")
@@ -294,8 +441,8 @@ io.on('connection', function(socket) {
 		game = games.find(x => x.name === game_name)
 		if (name.length > 0 && name.length <= 8 && game.players.length <= 6) {
 			socket.game_name = String(game_name)
-			meta_player.name = String(name)
-			game.join(player, meta_player, socket)
+			socket.meta_player.name = String(name)
+			game.join(socket.player, socket.meta_player, socket)
 		} else if (game.players.length > 6) {
 			socket.emit("error_message", "Game is full!")
 		} else {
@@ -304,42 +451,42 @@ io.on('connection', function(socket) {
 	})
 
 	socket.on('change_rotation_input', function(inp, inp_shift) {
-		game = games.find(x => x.name === socket.game_name)
-		meta_player = game.meta_players.find(x => x.id === socket.id)
-		if (meta_player){meta_player.input_r = Math.sign(inp) * Math.min(Math.abs(inp_shift), 1)}
+		socket.meta_player.input_r = Math.sign(inp) * Math.min(Math.abs(inp_shift), 1)
 	});
 
 	socket.on('change_thrust_input', function(inp, inp_shift) {
-		game = games.find(x => x.name === socket.game_name)
-		player = game.players.find(x => x.id === socket.id)
-		if (player){player.input_t = Math.min(Math.abs(inp_shift), 1)}
+		socket.player.input_t = Math.min(Math.abs(inp_shift), 1)
 	});
+
+	socket.on('save_player', function(player, meta_player){
+		socket.player = player
+		socket.meta_player = meta_player
+	})
 
 	socket.on('shoot', function() {
 		game = games.find(x => x.name === socket.game_name)
-		player = game.players.find(x => x.id === socket.id)
-		meta_player = game.meta_players.find(x => x.id === socket.id)
-		if (meta_player && meta_player.shoot_countdown == 0 && meta_player.state == "ingame") {
-			var i = player.shoot(meta_player)
+		if (game && socket.meta_player && socket.meta_player.shoot_countdown == 0 && socket.meta_player.state == "ingame") {
+			var i = socket.player.shoot(socket.meta_player)
 			game.bullets.push(i[0])
-			meta_player = i[1]
+			socket.meta_player = i[1]
 		}
-		io.to(game.name).emit("play_shoot_sound")
 	});
 
 	socket.on('disconnect', function() {
+		socket.leave(socket.game_name)
 		game = games.find(x => x.name === socket.game_name)
 		if (game) {
 			if (game.type == "Multi") {
-				game.players = game.players.filter(obj => {
-					return obj.id !== socket.id
-				})
-				game.meta_players = game.meta_players.filter(obj => {
-					return obj.id !== socket.id
-				})
+				game.players = game.players.filter(obj => {return obj.id !== socket.id})
+				game.meta_players = game.meta_players.filter(obj => {return obj.id !== socket.id})
 			} else if (game.type == "Versus") {
-				socket.emit("change_html", "reload page...")
-				games.splice(games.indexOf(game), 1)
+				var i = game.players.findIndex(x => x.id === socket.id)
+				if (i >= 0){
+					if (game.meta_players[i].color === "blue"){game.blue_player_count -= 1}
+					else if (game.meta_players[i].color === "red"){game.red_player_count -= 1}
+					game.players = game.players.filter(obj => {return obj.id !== socket.id})
+					game.meta_players = game.meta_players.filter(obj => {return obj.id !== socket.id})
+				}
 			}
 			game.meta_update()
 		}
@@ -348,7 +495,7 @@ io.on('connection', function(socket) {
 });
 
 setInterval(() => {
-	for (var x = 0; x < games.length; x++) {
+	for (var x = games.length - 1; x >= 0; x--) {
 		games[x].update()
 	}
 }, 1000 / 60);
@@ -437,14 +584,16 @@ function get_bullet_collisions(bullets, players, meta_players, asteroids) {
 
 					if (distance < radius) {
 						b.state = "exploded"
-						p.health -= 50
-						io.to(game.name).emit("play_explosion_sound")
+						b.vx = p.vx
+						b.vy = p.vy
+						p.health -= 20
 						if (p.health <= 0) {
+							b.x = p.x
+							b.y = p.y
+							b.state = "exploded_player"
 							p.health = 100
-							p.killed += 1
-							p_killer = game.meta_players.find(x => x.id === b.id)
-							p_killer.kills += 1
-							return [bullets, players, j]
+							var i = players.findIndex(x => x.id === b.id);
+							return [bullets, players, j, i]
 						} else {
 							return [bullets, players, false]
 						}
@@ -470,16 +619,28 @@ function get_bullet_collisions(bullets, players, meta_players, asteroids) {
 	return [bullets, players, false]
 }
 
-function get_game_html() {
-	var text = '<img src="static/images/menu.png" onclick="window.location.href = window.location.href" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 3;">'
+function get_multi_game_page() {
+	var text = ""
 	text += '<div id="player_list" style="position: absolute; top: 60px; right: 0px; width: 20%; z-index: 3;"></div>'
-	text += '<div class="player_instruction" id="title_container" style="background-color: black; opacity: 0.5"><center><img src="static/images/instruction.png" height="80%" style="z-index: 4; margin-bottom: 10%; margin-top: 10%;"></center>'
+	text += '<div class="player_instruction" id="title_container" style="background-color: black; opacity: 0.5"><img src="static/images/instruction.png" style="position: fixed; top: 50%; left: 50%; margin-top: -400px; margin-left: -640px;">'
 	text += '<script type="text/javascript">setTimeout(function() {$(".player_instruction").fadeTo(2000, 0); $("#player_instruction").remove()}, 3000)</script></div>'
+	text += '<img src="static/images/menu.png" onclick="window.location.href = window.location.href" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 10;">'
+	return text
+}
+
+function get_versus_game_page() {
+	var text = ""
+	text += '<div id="player_list" style="position: absolute; top: 60px; right: 0px; width: 20%; z-index: 3;"></div>'
+	text += '<div class="player_instruction" id="title_container" style="background-color: black; opacity: 0.5"><img src="static/images/instruction.png" style="position: fixed; top: 50%; left: 50%; margin-top: -400px; margin-left: -640px;">'
+	text += '<script type="text/javascript">setTimeout(function() {$(".player_instruction").fadeTo(2000, 0); $("#player_instruction").remove()}, 3000)</script></div>'
+	text += '<img src="static/images/menu.png" onclick="window.location.href = window.location.href" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 10;">'
+	text += '<div style="position: absolute; top: 10px; right: 0px; width: 100%; height: 80px; z-index: 3;"><center><h1 id="game_score" class="style" style="rgba(50, 50, 50, 0.5); width: 200px">1 vs 1</h1></center></div>'
+	text += '<script type="text/javascript">socket.on("change_game_score", function(blue_kills, red_kills){$("#game_score").html("<font color=\'red\'>" + String(red_kills) + "</font> VS <font color=\'blue\'>" + String(blue_kills) + "</font>")})</script>'
 	return text
 }
 
 function get_multi_page() {
-	var text = "<div id='title_container'><div id='title_vertical_container'><center><div id='input_field'><input id='name_input' placeholder='Name' class='style'>"
+	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1>Openworld Deathmatch</h1><sub>Everyone is on his own!</sub><div id='input_field'><input id='name_input' placeholder='Name' class='style'>"
 	text += "<script type='text/javascript'>socket.on('error_message', function(message) {$('#comment').html(message)})</script>"
 	text += "<div style='color:#c11313' id='comment'></div></div><table>"
 
@@ -492,13 +653,25 @@ function get_multi_page() {
 	text += "</table></center>"
 	text += "<form id='game_container'><input id='game_input' class='style' placeholder='Game Name'><button id='game_submit' type='button' class='style' onclick='socket.emit(\"create_multi_game\", $(\"#game_input\").val(), $(\"#name_input\").val())'>New Game</button></form>"
 	text += "</div></div>"
+	text += '<img src="static/images/menu.png" onclick="window.location.href = window.location.href" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 10;">'
 	return text
 }
 
 function get_versus_page() {
-	var text = "<div id='title_container'><div id='title_vertical_container'><center><div id='input_field'><input id='name_input' class='style' placeholder='Name'><button type='button' class='style' onclick='socket.emit(\"join_versus_game\", $(\"#name_input\").val())'>Join</button></form>"
+	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1>Team Deathmatch</h1><sub>Work in team to beat the other team!</sub><div id='input_field'><input id='name_input' placeholder='Name' class='style'>"
 	text += "<script type='text/javascript'>socket.on('error_message', function(message) {$('#comment').html(message)})</script>"
-	text += "<div style='color:#c11313' id='comment'></div></div></center></div></div>"
+	text += "<div style='color:#c11313' id='comment'></div></div><table>"
+
+	text += "<tr><th>Game Name</th><th>Number of Players</th><th></th></tr>"
+	for (var x = 0; x < games.length; x++) {
+		if (games[x].type == "Versus") {
+			text += `<tr><td>Game` + games[x].name + `</td><td>` + games[x].players.length + `</td><td><button type="button" class='style' onclick="socket.emit('join_versus_game', '` + games[x].name + `', $(\'#name_input\').val())">Join</button></td></tr>`
+		}
+	}
+	text += "</table></center>"
+	text += "<form id='game_container'><input id='game_input' class='style' placeholder='Game Name'><button id='game_submit' type='button' class='style' onclick='socket.emit(\"create_versus_game\", $(\"#game_input\").val(), $(\"#name_input\").val())'>New Game</button></form>"
+	text += "</div></div>"
+	text += '<img src="static/images/menu.png" onclick="window.location.href = window.location.href" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 10;">'
 	return text
 }
 

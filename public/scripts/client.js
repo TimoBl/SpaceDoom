@@ -40,7 +40,6 @@ socket.on('init_view', function(x, y) {
 
 socket.on('start_game', function() {
 		init_inputs()
-		init_sounds()
 		game_started = true
 })
 

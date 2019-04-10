@@ -38,15 +38,24 @@ function draw_background(c, canvas, dx, dy, img) {
 function draw_bullets(c, canvas, dx, dy, bullets) {
 		canvas.globalAlpha = 1.0
 		canvas.fillStyle = "#f24324"
+		canvas.strokeStyle = "#f24324"
 		for (var i = 0; i < bullets.length; i++) {
 				var x = dx + bullets[i].x
 				var y = dy + bullets[i].y
 				if (x >= 0 && x <= c.width && y >= 0 && y <= c.width) {
-						canvas.globalAlpha = 5 / bullets[i].r
 						canvas.beginPath();
 						canvas.arc(x, y, bullets[i].r, 0, 2 * Math.PI);
-						canvas.lineWidth = 0;
-						canvas.fill()
+						if (bullets[i].state === "exploded"){
+							canvas.globalAlpha = 10 / bullets[i].r
+							canvas.fill()
+						} else if (bullets[i].state === "exploded_player"){
+							canvas.globalAlpha = 60 / bullets[i].r
+							canvas.lineWidth = 10
+							canvas.stroke()
+						} else {
+							canvas.globalAlpha = 1.0
+							canvas.fill()
+						}
 				}
 		}
 }
