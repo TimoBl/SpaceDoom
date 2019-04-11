@@ -236,7 +236,7 @@ MultiGame.prototype.leave = function(index1, index2) {
 	this.players.splice(index1, 1)
 	this.meta_players.splice(index1, 1)
 	this.meta_update()
-	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1>You're dead!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Respawn</button></center></div></div>"
+	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1>You were killed!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Respawn</button></center></div></div>"
 	io.to(player.id).emit("change_html", text)
 }
 
@@ -357,7 +357,7 @@ VersusGame.prototype.leave = function(index1, index2) {
 		this.red_kills += 1
 	}
 	this.meta_update()
-	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1>You're dead!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Respawn</button></center></div></div>"
+	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1>You were killed!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Respawn</button></center></div></div>"
 	io.to(player.id).emit("change_html", text)
 }
 
