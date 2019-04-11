@@ -1,10 +1,10 @@
 //module variables
-var app = require('express')();
+var app = require('express')()
 var path = require("path")
 var express = require('express')
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-const port = process.env.PORT || 8000;
+var http = require('http').Server(app)
+var io = require('socket.io')(http)
+const port = process.env.PORT || 8000
 
 //protoypes
 function Player(id) {
@@ -20,20 +20,20 @@ function Player(id) {
 
 function MetaPlayer(id) {
 	this.id = id,
-	this.name = "",
-	this.r = 50,
-	this.kills = 0,
-	this.killed = 0,
-	this.asset_index = Math.round(Math.random() * 3),
-	this.color = get_random_color(),
-	this.input_r = 0,
-	this.shoot_force = 20,
-	this.speed = 0.1,
-	this.rotation_speed = 0.08,
-	this.max_speed = 8,
-	this.shoot_countdown = 0,
-	this.reload_time = 15,
-	this.state = "menu"
+		this.name = "",
+		this.r = 50,
+		this.kills = 0,
+		this.killed = 0,
+		this.asset_index = Math.round(Math.random() * 3),
+		this.color = get_random_color(),
+		this.input_r = 0,
+		this.shoot_force = 20,
+		this.speed = 0.1,
+		this.rotation_speed = 0.08,
+		this.max_speed = 8,
+		this.shoot_countdown = 0,
+		this.reload_time = 15,
+		this.state = "menu"
 }
 
 Player.prototype.shoot = function(meta) {
@@ -119,30 +119,30 @@ Player.prototype.move = function(limit, zone, meta) {
 
 function Bullet(id, x, y, vx, vy) {
 	this.id = id,
-	this.x = x,
-	this.y = y,
-	this.vx = vx,
-	this.vy = vy,
-	this.r = 5,
-	this.state = "shot"
+		this.x = x,
+		this.y = y,
+		this.vx = vx,
+		this.vy = vy,
+		this.r = 5,
+		this.state = "shot"
 }
 
 Bullet.prototype.move = function(zone) {
 	this.x += this.vx
 	this.y += this.vy
-		
+
 	if (this.state === "exploded") {
 		this.r += 0.5
-	} else if (this.state === "exploded_player"){
+	} else if (this.state === "exploded_player") {
 		this.r += (5 / Math.sqrt(this.r))
 	}
 
 
-	if (this.x - this.r < zone.x0 || this.y - this.r < zone.y0 || this.x + this.r > zone.x1 || this.y + this.r > zone.y1){
+	if (this.x - this.r < zone.x0 || this.y - this.r < zone.y0 || this.x + this.r > zone.x1 || this.y + this.r > zone.y1) {
 		return true
-	} else if (this.r > 10 && this.state === "exploded"){
+	} else if (this.r > 10 && this.state === "exploded") {
 		return true
-	} else if (this.r > 60 && this.state === "exploded_player"){
+	} else if (this.r > 60 && this.state === "exploded_player") {
 		return true
 	} else {
 		return false
@@ -181,7 +181,7 @@ MultiGame.prototype.join = function(player, meta_player, socket) {
 	player.input_r = 0
 	player.input_t = 0
 	player.rot = -Math.PI / 2,
-	meta_player.state = "spawning"
+		meta_player.state = "spawning"
 	this.players.push(player)
 	this.meta_players.push(meta_player)
 	socket.game_name = this.name
@@ -198,23 +198,27 @@ MultiGame.prototype.update = function() {
 		var items = get_player_collisions(this.players, this.meta_players, this.asteroids, this.healths, this.zone)
 		this.players = items[0]
 		this.healths = items[1]
-		if (items[2] == true){this.meta_update()}
+		if (items[2] == true) {
+			this.meta_update()
+		}
 
 		var items = get_bullet_collisions(this.bullets, this.players, this.meta_players, this.asteroids)
 		this.bullets = items[0]
 		this.players = items[1]
-		if (typeof items[2] === "number"){
+		if (typeof items[2] === "number") {
 			this.leave(items[2], items[3])
 		}
 
 		for (var i = this.players.length - 1; i >= 0; i--) {
 			var items = this.players[i].move(this.limit, this.zone, this.meta_players[i])
 			this.meta_players[i] = items[0]
-			if (items[1] === true){this.meta_update()}
+			if (items[1] === true) {
+				this.meta_update()
+			}
 		}
 		for (var i = this.bullets.length - 1; i >= 0; i--) {
 			var b = this.bullets[i]
-			if (b.move(this.zone) == true){
+			if (b.move(this.zone) == true) {
 				this.bullets.splice(i, 1)
 			}
 
@@ -223,7 +227,7 @@ MultiGame.prototype.update = function() {
 	}
 }
 
-MultiGame.prototype.leave = function(index1, index2){
+MultiGame.prototype.leave = function(index1, index2) {
 	var player = this.players[index1]
 	var meta_player = this.meta_players[index1]
 	meta_player.killed += 1
@@ -232,16 +236,16 @@ MultiGame.prototype.leave = function(index1, index2){
 	this.players.splice(index1, 1)
 	this.meta_players.splice(index1, 1)
 	this.meta_update()
-	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1 class='style'>You're dead!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Join</button></center></div></div>"
+	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1>You're dead!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Respawn</button></center></div></div>"
 	io.to(player.id).emit("change_html", text)
 }
 
 MultiGame.prototype.meta_update = function() {
+	//this update changes the meta informations on client side
 	var p = sort_player_list(this.players, this.meta_players)
 	this.players = p[0]
 	this.meta_players = p[1]
 	io.to(this.name).emit("meta_update", this.limit, this.zone, this.asteroids, this.healths, this.meta_players)
-	console.log("meta_update")
 }
 
 
@@ -274,7 +278,7 @@ function VersusGame(name) {
 }
 
 VersusGame.prototype.join = function(player, meta_player, socket) {
-	if (this.blue_player_count > this.red_player_count){
+	if (this.blue_player_count > this.red_player_count) {
 		meta_player.color = "red"
 		this.red_player_count += 1
 		player.x = 250
@@ -292,7 +296,7 @@ VersusGame.prototype.join = function(player, meta_player, socket) {
 	player.input_r = 0
 	player.input_t = 0
 	player.rot = -Math.PI / 2,
-	meta_player.state = "spawning"
+		meta_player.state = "spawning"
 	this.players.push(player)
 	this.meta_players.push(meta_player)
 	socket.game_name = this.name
@@ -309,23 +313,27 @@ VersusGame.prototype.update = function() {
 		var items = get_player_collisions(this.players, this.meta_players, this.asteroids, this.healths, this.zone)
 		this.players = items[0]
 		this.healths = items[1]
-		if (items[2] == true){this.meta_update()}
+		if (items[2] == true) {
+			this.meta_update()
+		}
 
 		var items = get_bullet_collisions(this.bullets, this.players, this.meta_players, this.asteroids)
 		this.bullets = items[0]
 		this.players = items[1]
-		if (typeof items[2] === "number"){
+		if (typeof items[2] === "number") {
 			this.leave(items[2], items[3])
 		}
 
 		for (var i = this.players.length - 1; i >= 0; i--) {
 			var items = this.players[i].move(this.limit, this.zone, this.meta_players[i])
 			this.meta_players[i] = items[0]
-			if (items[1] == true){this.meta_update()}
+			if (items[1] == true) {
+				this.meta_update()
+			}
 		}
 		for (var i = this.bullets.length - 1; i >= 0; i--) {
 			var b = this.bullets[i]
-			if (b.move(this.zone) == true){
+			if (b.move(this.zone) == true) {
 				this.bullets.splice(i, 1)
 			}
 
@@ -334,7 +342,7 @@ VersusGame.prototype.update = function() {
 	}
 }
 
-VersusGame.prototype.leave = function(index1, index2){
+VersusGame.prototype.leave = function(index1, index2) {
 	var player = this.players[index1]
 	var meta_player = this.meta_players[index1]
 	meta_player.killed += 1
@@ -342,10 +350,14 @@ VersusGame.prototype.leave = function(index1, index2){
 	io.to(player.id).emit("save_player", player, meta_player)
 	this.players.splice(index1, 1)
 	this.meta_players.splice(index1, 1)
-	if (meta_player.color == "red"){this.blue_kills += 1; this.blue_player_count -= 1}
-	else if (meta_player.color == "blue"){this.red_kills += 1}
+	if (meta_player.color == "red") {
+		this.blue_kills += 1;
+		this.blue_player_count -= 1
+	} else if (meta_player.color == "blue") {
+		this.red_kills += 1
+	}
 	this.meta_update()
-	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1 class='style'>You're dead!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Join</button></center></div></div>"
+	var text = "<div id='title_container'><div id='title_vertical_container'><center><h1>You're dead!</h1><button type='button' class='style' onclick=\"socket.emit(\'join_multi_game\', '" + this.name + "','" + meta_player.name + "')\">Respawn</button></center></div></div>"
 	io.to(player.id).emit("change_html", text)
 }
 
@@ -458,7 +470,7 @@ io.on('connection', function(socket) {
 		socket.player.input_t = Math.min(Math.abs(inp_shift), 1)
 	});
 
-	socket.on('save_player', function(player, meta_player){
+	socket.on('save_player', function(player, meta_player) {
 		socket.player = player
 		socket.meta_player = meta_player
 	})
@@ -477,15 +489,26 @@ io.on('connection', function(socket) {
 		game = games.find(x => x.name === socket.game_name)
 		if (game) {
 			if (game.type == "Multi") {
-				game.players = game.players.filter(obj => {return obj.id !== socket.id})
-				game.meta_players = game.meta_players.filter(obj => {return obj.id !== socket.id})
+				game.players = game.players.filter(obj => {
+					return obj.id !== socket.id
+				})
+				game.meta_players = game.meta_players.filter(obj => {
+					return obj.id !== socket.id
+				})
 			} else if (game.type == "Versus") {
 				var i = game.players.findIndex(x => x.id === socket.id)
-				if (i >= 0){
-					if (game.meta_players[i].color === "blue"){game.blue_player_count -= 1}
-					else if (game.meta_players[i].color === "red"){game.red_player_count -= 1}
-					game.players = game.players.filter(obj => {return obj.id !== socket.id})
-					game.meta_players = game.meta_players.filter(obj => {return obj.id !== socket.id})
+				if (i >= 0) {
+					if (game.meta_players[i].color === "blue") {
+						game.blue_player_count -= 1
+					} else if (game.meta_players[i].color === "red") {
+						game.red_player_count -= 1
+					}
+					game.players = game.players.filter(obj => {
+						return obj.id !== socket.id
+					})
+					game.meta_players = game.meta_players.filter(obj => {
+						return obj.id !== socket.id
+					})
 				}
 			}
 			game.meta_update()
