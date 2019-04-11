@@ -645,7 +645,7 @@ function get_bullet_collisions(bullets, players, meta_players, asteroids) {
 function get_multi_game_page() {
 	var text = ""
 	text += '<div id="player_list" style="position: absolute; top: 60px; right: 0px; width: 20%; z-index: 3;"></div>'
-	text += '<div class="player_instruction" id="title_container" style="background-color: black; opacity: 0.5"><img src="static/images/instruction.png" style="position: fixed; top: 50%; left: 50%; margin-top: -400px; margin-left: -640px;">'
+	text += '<div class="player_instruction" id="title_container" style="background-color: black; opacity: 0.5"><img src="static/images/instruction.png" style="position: fixed; top: 50%; left: 50%; margin-top: -200px; margin-left: -320px;">'
 	text += '<script type="text/javascript">setTimeout(function() {$(".player_instruction").fadeTo(2000, 0); $("#player_instruction").remove()}, 3000)</script></div>'
 	text += '<img src="static/images/menu.png" onclick="window.location.href = window.location.href" style="position: absolute; cursor: pointer; width: 40px; height: 40px; top: 10px; right: 10px; z-index: 10;">'
 	return text
