@@ -181,7 +181,7 @@ MultiGame.prototype.join = function(player, meta_player, socket) {
 	player.input_r = 0
 	player.input_t = 0
 	player.rot = -Math.PI / 2,
-		meta_player.state = "spawning"
+	meta_player.state = "spawning"
 	this.players.push(player)
 	this.meta_players.push(meta_player)
 	socket.game_name = this.name
